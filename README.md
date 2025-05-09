@@ -1,1 +1,1 @@
-The new G - Home website!
+This is the new G - Home website!
