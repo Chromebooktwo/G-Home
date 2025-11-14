@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Reflex Game</title>
+    <style>
+        input[type=button] {
+            background-color: #77797c;
+            border: none;
+            border-radius: 10%;
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            margin: 4px 2px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        input[type=button]:disabled {
+            background-color: #b0b0b0;
+            cursor: not-allowed;
+        }
+        .center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            flex-direction: column;
+        }
+        #colorArea {
+            width: 400px;
+            height: 200px;
+            border: 2px solid #000;
+            margin-top: 20px;
+            display: inline-block;
+            background-color: white;
+            animation: popUp 0.3s ease-in-out;
+        }
+        #responseTime {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: inline-block;
+            color: black;
+        }
+        @keyframes popUp {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        select {
+            padding: 5px;
+            font-size: 16px;
+        }
+        h1 {
+            color: black;
+        }
+        .btn {
+            font-size: 16px;
+        }
+        h2, h3 {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+<script>
+    var startTime, endTime, startPressed = false, bgChangeStarted = false, timerID, intervalID;
+
+    function startTest() {
+        var color = document.response.bgColorChange.options[document.response.bgColorChange.selectedIndex].text;
+        var colorDark = darkenColor(color);
+        document.getElementById('colorArea').style.backgroundColor = colorDark;
+        bgChangeStarted = true;
+        startTime = new Date();
+        document.getElementById('responseTime').innerHTML = "0.0 seconds (0ms)";
+        intervalID = setInterval(updateResponseTime, 10);
+    }
+
+    function stopTest() {
+        if (bgChangeStarted) {
+            clearInterval(intervalID);
+            endTime = new Date();
+            var responseMS = endTime.getTime() - startTime.getTime();
+            var responseSeconds = responseMS / 1000;
+            var roundedSeconds = responseSeconds.toFixed(1);
+            var roundedMilliseconds = Math.floor(responseMS);
+            document.getElementById('responseTime').innerHTML = roundedSeconds + " seconds (" + roundedMilliseconds + "ms)";
+            document.getElementById('colorArea').style.backgroundColor = "white";
+            document.getElementById("resetButton").disabled = false;
+            setTimeout(() => document.getElementById('responseTime').innerHTML = roundedSeconds + " seconds (" + roundedMilliseconds + "ms)", 100);
+            startPressed = false;
+            bgChangeStarted = false;
+            // Hide Start and Stop buttons, show Reset button
+            document.getElementById("startButton").style.display = "none";
+            document.getElementById("stopButton").style.display = "none";
+            document.getElementById("resetButton").style.display = "inline-block";
+        } else {
+            if (!startPressed) {
+                document.getElementById('responseTime').innerHTML = "Please press Start first";
+            } else {
+                clearTimeout(timerID);
+                startPressed = false;
+                document.getElementById('responseTime').innerHTML = "Clicked too early! Try again";
+                // Show Reset button, hide Start and Stop buttons
+                document.getElementById("startButton").style.display = "none";
+                document.getElementById("stopButton").style.display = "none";
+                document.getElementById("resetButton").style.display = "inline-block";
+            }
+        }
+    }
+
+    function randNumber() {
+        var today = new Date();
+        var seed = today.getSeconds();
+        seed = (0x015a4e35 * seed + 1) % (1 << 31);
+        return ((seed >> 15) & 0x7fff) / 32767;
+    }
+
+    function startit() {
+        if (startPressed) {
+            alert("Already started");
+        } else {
+            startPressed = true;
+            document.getElementById("startButton").disabled = true;
+            timerID = setTimeout('startTest()', 6000 * randNumber());
+        }
+    }
+
+    function updateResponseTime() {
+        var currentTime = new Date();
+        var responseMS = currentTime.getTime() - startTime.getTime();
+        var responseSeconds = responseMS / 1000;
+        var roundedSeconds = responseSeconds.toFixed(1);
+        var roundedMilliseconds = Math.floor(responseMS);
+        document.getElementById('responseTime').innerHTML = roundedSeconds + " seconds (" + roundedMilliseconds + "ms)";
+    }
+
+    function resetGame() {
+        // Reset everything
+        document.getElementById('responseTime').innerHTML = "0.0 seconds (0ms)";
+        document.getElementById('colorArea').style.backgroundColor = "white";
+        document.getElementById("startButton").style.display = "inline-block";
+        document.getElementById("stopButton").style.display = "inline-block";
+        document.getElementById("resetButton").style.display = "none";
+        document.getElementById("startButton").disabled = false;
+        startPressed = false;
+        bgChangeStarted = false;
+    }
+
+    function darkenColor(color) {
+        var colorMap = {
+            'Red': '#cc0000',
+            'Orange': '#cc6600',
+            'Yellow': '#cc9900',
+            'Green': '#006600',
+            'Blue': '#003366',
+            'Purple': '#660066',
+            'Brown': '#663300'
+        };
+        return colorMap[color] || 'white';
+    }
+</script>
+
+<center><h1>Reflex Game</h1></center>
+<center><h2>Test your Response time!</h2></center>
+<center><h3>How To Play</h3>
+    <p>Click "Start", wait for color change, then hit "Stop"</p>
+</center>
+
+<center>
+    <form name="response">
+        <label>Change color to: </label>
+        <select name="bgColorChange">
+            <option selected>Red</option>
+            <option>Orange</option>
+            <option>Yellow</option>
+            <option>Green</option>
+            <option>Blue</option>
+            <option>Purple</option>
+            <option>Brown</option>
+        </select><br><br>
+        <input type="button" id="startButton" class="btn" value="Start" onClick="startit()">
+        <input type="button" id="stopButton" class="btn" value="Stop" onClick="stopTest()">
+        <input type="button" id="resetButton" class="btn" value="Reset" onClick="resetGame()" style="display: none;">
+    </form>
+</center>
+
+<div class="center-container">
+    <div id="responseTime">0.0 seconds (0ms)</div>
+    <div id="colorArea"></div>
+</div>
+
+</body>
+</html>

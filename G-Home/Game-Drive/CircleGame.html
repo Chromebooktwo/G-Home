@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        .button {
+            position: absolute;
+            left: 50%;
+            top: 75%; /* Moved down from 60% to 75% */
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+        .button:hover {
+            background-color: #ddd;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .instructions {
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        .countdown {
+            color: white;
+            font-size: 150px;
+            font-family: Arial, sans-serif;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="startOverlay" class="overlay">
+        <div class="instructions">
+            <h2>Welcome to the Circle Game!</h2>
+            <p>Click the "Start Game" button below to begin.</p>
+            <p>Move your player with your mouse, eat smaller circles then you to grow. Watch out for bigger circles then you, if you touch them you will get eaten and die! Try to get a score of 50 to win. Good luck!</p>
+            <p>:)</p>
+        </div>
+        <button id="startButton" class="button" style="display: block;">Start Game</button>
+        <div id="countdown" class="countdown"></div>
+    </div>
+    <button id="resetButton" class="button" onclick="location.reload()">Play Again</button>
+    <script>
+        var all_circles;
+        var num_circles;
+        var bgclr;
+        var mouse_size; 
+        var score;
+        var gameState = 'start'; // can be 'start', 'countdown', 'playing', 'gameOver', or 'won'
+        var resetButton;
+        var startButton;
+        var startOverlay;
+        var countdownElement;
+        var countdownValue = 3;
+
+        function setup() {
+            colorMode(HSB);
+            createCanvas(windowWidth, windowHeight);
+            background(0);
+            bgclr = 'black';
+            mouse_size = 10;
+            num_circles = 30;
+            all_circles = [];
+            for (var i = 0; i < num_circles; i++) {
+                all_circles[i] = createCircle(false);
+            }
+            score = 0;
+            resetButton = document.getElementById('resetButton');
+            startButton = document.getElementById('startButton');
+            startOverlay = document.getElementById('startOverlay');
+            countdownElement = document.getElementById('countdown');
+
+            startButton.addEventListener('click', startCountdown);
+        }
+
+        function startCountdown() {
+            gameState = 'countdown';
+            startButton.style.display = 'none';
+            countdownElement.style.display = 'block';
+            countdownValue = 3;
+            showCountdown();
+        }
+
+        function showCountdown() {
+            if (countdownValue > 0) {
+                countdownElement.textContent = countdownValue;
+                countdownValue--;
+                setTimeout(showCountdown, 1000);
+            } else if (countdownValue === 0) {
+                countdownElement.textContent = 'GO!';
+                countdownValue--;
+                setTimeout(showCountdown, 1000);
+            } else {
+                startOverlay.style.display = 'none';
+                gameState = 'playing';
+            }
+        }
+
+        function createCircle(mouse) {
+            var e = {};
+            e.x = random(0, width);
+            e.y = random(0, height);
+            e.r = random(0.1, 50);
+            e.vx = random(-2, 2);
+            e.vy = random(-2, 2);
+            e.h = random(0, 360);
+            e.s = 40;
+            e.eaten = false;
+
+            if (mouse) {
+                e.x = mouseX;
+                e.y = mouseY;
+                e.r = mouse_size;
+                e.s = 0;
+            }
+            return e;
+        }
+
+        function drawCircle(e) {
+            fill(e.h, e.s, 100, 0.5);
+            noStroke();
+            circle(e.x, e.y, e.r * 2);
+        }
+
+        function changeCircle(e) {
+            e.r = random(0.1, 50);
+            e.h = random(0, 360);
+            e.eaten = false;
+        }
+
+        function updateCircle(e) {
+            if (gameState === 'playing') {
+                e.x += e.vx;
+                e.y += e.vy;
+
+                if (e.x <= 0) {
+                    changeCircle(e);
+                    e.x += 10;
+                    e.vx *= random(-0.1, -2);
+                }
+                if (e.x >= width) {
+                    changeCircle(e);
+                    e.x -= 10;
+                    e.vx *= -1;
+                }
+                if (e.y <= 0) {
+                    changeCircle(e);
+                    e.y += 10;
+                    e.vy *= -1;
+                }
+                if (e.y >= height) {
+                    changeCircle(e);
+                    e.y -= 10;
+                    e.vy *= -1;
+                }
+            }
+        }
+
+        function areCirclesColliding(c1, c2) {
+            let radiusSums = c1.r + c2.r;
+            let distanceBetweenCircles = dist(c1.x, c1.y, c2.x, c2.y);
+            return radiusSums > distanceBetweenCircles;
+        }
+
+        function isMouseEaten(c1, c2){
+            return c1.r > c2.r;
+        }
+
+        function eatCircle(e){
+            e.r = 0;
+            e.eaten = true;
+            mouse_size += 1;
+            score += 1;
+        }
+
+        function circleHasBeenEaten(e){
+            return e.eaten;
+        }
+
+        function showGameOver() {
+            gameState = 'gameOver';
+            bgclr = 'red';
+            resetButton.style.display = 'block';
+        }
+
+        function showGameWon() {
+            gameState = 'won';
+            bgclr = 'green';
+            resetButton.style.display = 'block';
+        }
+
+        function draw() {
+            background(bgclr);
+            let mouse_circle = createCircle(true);
+            drawCircle(mouse_circle);
+            
+            // Only show score during gameplay
+            if (gameState === 'playing') {
+                textSize(100);
+                fill(255);
+                text(score, 60, 120);
+            }
+
+            // Win condition
+            if (score >= 50) {
+                showGameWon();
+                textSize(100);
+                fill(255);
+                textAlign(CENTER);
+                text('YOU WON!', width / 2, height / 2);
+            }
+
+            // Game over screen
+            if (gameState === 'gameOver') {
+                textAlign(CENTER);
+                textSize(100);
+                fill(255);
+                text('GAME OVER', width / 2, height / 2 - 100);
+                textSize(50);
+                text('Score: ' + score, width / 2, height / 2);
+            }
+
+            // Draw all circles based on game state
+            if (gameState === 'playing') {
+                for (let i = 0; i < all_circles.length; i++) {
+                    drawCircle(all_circles[i]);
+                    updateCircle(all_circles[i]);
+                    if (areCirclesColliding(all_circles[i], mouse_circle)) {
+                        if (isMouseEaten(all_circles[i], mouse_circle)){
+                            showGameOver();
+                        } else {
+                            if (!circleHasBeenEaten(all_circles[i])){
+                                if (bgclr == 'black'){
+                                    eatCircle(all_circles[i]);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Just draw the circles in their final positions for other states
+                for (let i = 0; i < all_circles.length; i++) {
+                    drawCircle(all_circles[i]);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

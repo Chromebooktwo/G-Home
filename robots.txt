@@ -1,0 +1,7 @@
+#Hello, welcome! This is the robots.txt for the G - Home website.
+#G - Home website link:   https://www.g-home.xyz
+
+User-agent: *
+Disallow:
+
+Sitemap: https://www.g-home.xyz/sitemap.xml

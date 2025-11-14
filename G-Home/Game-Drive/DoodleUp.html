@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doodle Up: Double Digits</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background-color: #1a237e;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    canvas {
+      border: 1px solid black;
+      background-color: #283593;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+
+    .death-screen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+    }
+
+    #startButton {
+      margin-top: 20px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #score,
+    #highScore {
+      color: white;
+    }
+
+  </style>
+</head>
+
+<body>
+  <canvas width="375" height="667" id="game"></canvas>
+
+  <div class="overlay" id="overlay">
+    <div class="death-screen">
+      <h1>Game Over!</h1>
+      <p>Your Score: <span id="finalScore"></span></p>
+      <p>High Score: <span id="finalHighScore"></span></p>
+      <button onclick="resetGame()">Play Again</button>
+    </div>
+  </div>
+
+  <button id="startButton" onclick="startGame()">Start Game</button>
+
+  <p id="score" style="position: absolute; top: 10px; left: 10px; font-size: 24px;"></p>
+  <p id="highScore" style="position: absolute; top: 10px; right: 10px; font-size: 24px;"></p>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const context = canvas.getContext('2d');
+
+    let lastTime = 0; // For tracking time between frames
+
+    // Game constants and variables
+    const SPEEDS = {
+      NORMAL: 1.5, // Regular brown platforms
+      YELLOW: 1.0, // Yellow platforms (1.5x slower than normal)
+      PURPLE: 4,   // Purple falling platforms
+      OBSTACLE: 1.8 // Red obstacles
+    };
+
+    const PLATFORM_CONFIG = {
+      YELLOW_TIMER_VALUES: [3, 4, 5], // Only whole numbers for yellow platform timers
+      YELLOW_CHANCE: 0.3, // 30% chance for yellow platforms
+      PURPLE_CHANCE: 0.2, // 20% chance for purple platforms
+      MIN_COUNT: 5, // Minimum platforms on screen
+      WIDTH: 300, // Platform width
+      HEIGHT: 20 // Platform height
+    };
+
+    let score = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
+    let doodle = {
+      x: canvas.width / 2,
+      y: canvas.height - 30,
+      width: 20,
+      height: 20,
+      dx: 0,
+      dy: 0,
+      isJumping: false
+    };
+
+    let platforms = [];
+    let obstacles = [];
+    let gameOver = false;
+    let falling = false;
+    let fallDuration = 0;
+    const fallThreshold = 30;
+
+    // Track elapsed time for the yellow timer decrement
+    let timeAccumulator = 0;
+    const YELLOW_TIMER_INTERVAL = 1; // Interval in seconds for each yellow platform tick
+
+    // Generate platforms with a weighted yellow timer
+    function generatePlatforms() {
+      const isFalling = Math.random() < PLATFORM_CONFIG.PURPLE_CHANCE;
+      const isYellow = !isFalling && Math.random() < PLATFORM_CONFIG.YELLOW_CHANCE; // 30% chance for yellow platforms
+
+      let yellowDuration = 0; // Default value for non-yellow platforms
+
+      // Only set a yellow duration if the platform is yellow
+      if (isYellow) {
+        const randomValue = Math.random(); // Generate a random value to determine the timer duration
+        if (randomValue < 0.6) {
+          yellowDuration = 3; // 60% chance for 3 seconds
+        } else if (randomValue < 0.9) {
+          yellowDuration = 4; // 30% chance for 4 seconds
+        } else {
+          yellowDuration = 5; // 10% chance for 5 seconds
+        }
+      }
+
+      platforms.push({
+        x: Math.random() * (canvas.width - PLATFORM_CONFIG.WIDTH),
+        y: canvas.height + 50,
+        width: PLATFORM_CONFIG.WIDTH,
+        height: PLATFORM_CONFIG.HEIGHT,
+        isFalling: isFalling,
+        isYellow: isYellow,
+        yellowTimer: yellowDuration,
+        lastUpdateTime: performance.now(), // Track last update time for each platform
+        speed: isFalling ? SPEEDS.PURPLE : (isYellow ? SPEEDS.YELLOW : SPEEDS.NORMAL)
+      });
+    }
+
+    // Generate obstacles
+    function generateObstacles() {
+      obstacles.push({
+        x: Math.random() * canvas.width,
+        y: 0,
+        width: 20,
+        height: 20
+      });
+    }
+
+    function drawDoodle() {
+      context.fillStyle = 'blue';
+      context.fillRect(doodle.x, doodle.y, doodle.width, doodle.height);
+    }
+
+    function drawPlatforms() {
+      platforms.forEach(platform => {
+        if (platform.isYellow) {
+          context.fillStyle = 'yellow';
+          context.fillRect(platform.x, platform.y, platform.width, platform.height);
+          context.fillStyle = 'black';
+
+          // Round the timer value and display it on the platform
+          const timerText = Math.ceil(platform.yellowTimer); // Round up to nearest whole number
+          context.font = '16px Arial';
+          context.textAlign = 'center';
+          context.fillText(timerText, platform.x + platform.width / 2, platform.y + platform.height / 2 + 6);
+        } else {
+          context.fillStyle = platform.isFalling ? 'purple' : 'brown';
+          context.fillRect(platform.x, platform.y, platform.width, platform.height);
+        }
+      });
+    }
+
+    function drawObstacles() {
+      context.fillStyle = 'red';
+      obstacles.forEach(obstacle => {
+        context.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      });
+    }
+
+    function isPlayerOnPlatform(platform) {
+      return (
+        doodle.x < platform.x + platform.width &&
+        doodle.x + doodle.width > platform.x &&
+        doodle.y + doodle.height > platform.y &&
+        doodle.y + doodle.height < platform.y + platform.height
+      );
+    }
+
+    function checkCollision(currentTime) {
+      let onPlatform = false;
+
+      platforms.forEach(platform => {
+        if (isPlayerOnPlatform(platform)) {
+
+          if (platform.isYellow) {
+            // Calculate elapsed time for this frame
+            const deltaTime = (currentTime - platform.lastUpdateTime) / 1000; // in seconds
+            timeAccumulator += deltaTime; // Accumulate elapsed time
+
+            // Decrement the yellow timer after each second (or based on your chosen interval)
+            if (timeAccumulator >= YELLOW_TIMER_INTERVAL) {
+              timeAccumulator = 0; // Reset the accumulator
+              if (platform.yellowTimer > 0) {
+                platform.yellowTimer -= 1; // Decrement timer by 1 second
+              }
+            }
+
+            platform.lastUpdateTime = currentTime;
+
+            if (platform.yellowTimer <= 0) {
+              // Remove the platform if the timer is done
+              platforms.splice(platforms.indexOf(platform), 1);
+            } else {
+              doodle.y = platform.y - doodle.height;
+              doodle.dy = -8;
+              doodle.isJumping = false;
+              onPlatform = true;
+            }
+
+          } else {
+            doodle.y = platform.y - doodle.height;
+            doodle.dy = -8;
+            doodle.isJumping = false;
+            onPlatform = true;
+          }
+
+        } else if (platform.isYellow) {
+          platform.lastUpdateTime = currentTime; // Update time even when not on platform
+        }
+      });
+
+      if (!onPlatform && doodle.y > canvas.height) {
+        falling = true;
+      } else {
+        falling = false;
+        fallDuration = 0;
+      }
+
+      obstacles.forEach(obstacle => {
+        if (
+          doodle.x < obstacle.x + obstacle.width &&
+          doodle.x + doodle.width > obstacle.x &&
+          doodle.y < obstacle.y + obstacle.height &&
+          doodle.y + doodle.height > obstacle.y
+        ) {
+          endGame();
+        }
+      });
+
+      if (doodle.x < 0) {
+        doodle.x = 0;
+      } else if (doodle.x + doodle.width > canvas.width) {
+        doodle.x = canvas.width - doodle.width;
+      }
+
+      if (doodle.y < 0) {
+        doodle.y = canvas.height - 30;
+      }
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'ArrowLeft') {
+        doodle.dx = -2;
+      } else if (event.key === 'ArrowRight') {
+        doodle.dx = 2;
+      } else if (event.key === 'ArrowUp' && !doodle.isJumping) {
+        doodle.isJumping = true;
+        doodle.dy = -8;
+      }
+    });
+
+    document.addEventListener('keyup', function(event) {
+      if ((event.key === 'ArrowLeft' && doodle.dx === -2) ||
+        (event.key === 'ArrowRight' && doodle.dx === 2)) {
+        doodle.dx = 0;
+      }
+    });
+
+    function startGame() {
+      document.getElementById('startButton').style.display = 'none';
+      lastTime = performance.now();
+      gameLoop(lastTime);
+    }
+
+    function gameLoop(currentTime) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlatforms();
+      drawObstacles();
+      drawDoodle();
+
+      // Update platforms
+      platforms.forEach(platform => {
+        platform.y -= platform.speed;
+
+        if (platform.y < 0) {
+          platforms.splice(platforms.indexOf(platform), 1);
+        }
+      });
+
+      if (platforms.length < PLATFORM_CONFIG.MIN_COUNT) {
+        generatePlatforms();
+      }
+
+      // Update obstacles
+      obstacles.forEach(obstacle => {
+        obstacle.y += SPEEDS.OBSTACLE;
+        if (obstacle.y > canvas.height) {
+          obstacles.splice(obstacles.indexOf(obstacle), 1);
+        }
+      });
+
+      if (obstacles.length < 3) {
+        generateObstacles();
+      }
+
+      doodle.x += doodle.dx;
+      checkCollision(currentTime);
+
+      if (doodle.isJumping) {
+        doodle.y += doodle.dy;
+        doodle.dy += 0.2;
+        if (doodle.y > canvas.height - 30) {
+          doodle.y = canvas.height - 30;
+          doodle.dy = 0;
+          doodle.isJumping = false;
+        }
+      } else {
+        doodle.y += 3;
+      }
+
+      if (doodle.dy < 0) {
+        score++;
+        document.getElementById('score').textContent = 'Score: ' + score;
+      }
+
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+      }
+
+      document.getElementById('highScore').textContent = 'High Score: ' + highScore;
+
+      if (falling && doodle.y > canvas.height) {
+        fallDuration++;
+        if (fallDuration > fallThreshold) {
+          endGame();
+        }
+      }
+
+      if (gameOver) {
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('finalHighScore').textContent = highScore;
+        document.getElementById('overlay').style.display = 'block';
+      } else {
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    function endGame() {
+      gameOver = true;
+    }
+
+    function resetGame() {
+      score = 0;
+      doodle.x = canvas.width / 2;
+      doodle.y = canvas.height - 30;
+      doodle.dx = 0;
+      doodle.dy = 0;
+      doodle.isJumping = false;
+      platforms = [];
+      obstacles = [];
+      gameOver = false;
+      falling = false;
+      fallDuration = 0;
+      document.getElementById('overlay').style.display = 'none';
+      lastTime = performance.now();
+      gameLoop(lastTime);
+    }
+  </script>
+</body>
+
+</html>

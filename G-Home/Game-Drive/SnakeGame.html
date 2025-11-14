@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake Game</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      background: #2c3e50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Arial', sans-serif;
+    }
+    #game-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+    }
+    canvas {
+      border: 2px solid #ecf0f1;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.8);
+      color: #ecf0f1;
+      font-size: 24px;
+      border-radius: 5px;
+    }
+    #message {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2ecc71;
+    }
+    #score-display {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #ecf0f1;
+      font-size: 18px;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas width="400" height="400" id="game"></canvas>
+    <div id="score-display">Score: 0 | High Score: 0</div>
+    <div id="overlay">
+      <div id="message"></div>
+      <button id="start-button">Start Game</button>
+    </div>
+  </div>
+  <script>
+    var canvas = document.getElementById('game');
+    var context = canvas.getContext('2d');
+    var grid = 16;
+    var count = 0;
+    var score = 0;
+    var highScore = 0;
+    var gameState = 'start'; // 'start', 'playing', 'gameOver'
+
+    var snake = {
+      x: 160,
+      y: 160,
+      dx: grid,
+      dy: 0,
+      cells: [],
+      maxCells: 4
+    };
+
+    var apple = {
+      x: 320,
+      y: 320
+    };
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    function resetGame() {
+      snake.x = 160;
+      snake.y = 160;
+      snake.cells = [];
+      snake.maxCells = 4;
+      snake.dx = grid;
+      snake.dy = 0;
+      apple.x = getRandomInt(0, 25) * grid;
+      apple.y = getRandomInt(0, 25) * grid;
+      score = 0;
+      updateScoreDisplay();
+    }
+
+    function updateScoreDisplay() {
+      document.getElementById('score-display').textContent = `Score: ${score} | High Score: ${highScore}`;
+    }
+
+    function showOverlay(message) {
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('message').innerHTML = message;
+    }
+
+    function hideOverlay() {
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+    function loop() {
+      requestAnimationFrame(loop);
+
+      if (gameState !== 'playing') {
+        return;
+      }
+
+      if (++count < 4) {
+        return;
+      }
+
+      count = 0;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      snake.x += snake.dx;
+      snake.y += snake.dy;
+
+      if (snake.x < 0) {
+        snake.x = canvas.width - grid;
+      } else if (snake.x >= canvas.width) {
+        snake.x = 0;
+      }
+
+      if (snake.y < 0) {
+        snake.y = canvas.height - grid;
+      } else if (snake.y >= canvas.height) {
+        snake.y = 0;
+      }
+
+      snake.cells.unshift({ x: snake.x, y: snake.y });
+
+      if (snake.cells.length > snake.maxCells) {
+        snake.cells.pop();
+      }
+
+      context.fillStyle = '#e74c3c';
+      context.fillRect(apple.x, apple.y, grid - 1, grid - 1);
+
+      context.fillStyle = '#2ecc71';
+      snake.cells.forEach(function (cell, index) {
+        context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+
+        if (cell.x === apple.x && cell.y === apple.y) {
+          snake.maxCells++;
+          score++;
+          if (score > highScore) {
+            highScore = score;
+          }
+          updateScoreDisplay();
+          apple.x = getRandomInt(0, 25) * grid;
+          apple.y = getRandomInt(0, 25) * grid;
+        }
+
+        for (var i = index + 1; i < snake.cells.length; i++) {
+          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+            gameState = 'gameOver';
+            showOverlay(`Game Over!<br>Your score: ${score}<br>${score === highScore ? "New High Score!" : ""}`);
+          }
+        }
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (gameState !== 'playing') {
+        return;
+      }
+
+      if (e.which === 37 && snake.dx === 0) {
+        snake.dx = -grid;
+        snake.dy = 0;
+      } else if (e.which === 38 && snake.dy === 0) {
+        snake.dy = -grid;
+        snake.dx = 0;
+      } else if (e.which === 39 && snake.dx === 0) {
+        snake.dx = grid;
+        snake.dy = 0;
+      } else if (e.which === 40 && snake.dy === 0) {
+        snake.dy = grid;
+        snake.dx = 0;
+      }
+    });
+
+    document.getElementById('start-button').addEventListener('click', function() {
+      if (gameState === 'start' || gameState === 'gameOver') {
+        gameState = 'playing';
+        resetGame();
+        hideOverlay();
+      }
+    });
+
+    showOverlay('Welcome to Snake!<br>Use arrow keys to move.<br>Eat apples to grow.');
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

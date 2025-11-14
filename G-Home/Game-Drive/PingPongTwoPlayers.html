@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Basic Pong HTML Game</title>
+  <meta charset="UTF-8">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      position: relative;
+    }
+
+    canvas {
+      border: 1px solid white;
+    }
+
+    #score {
+      color: white;
+      font-size: 16px; /* Smaller font size */
+      margin: 5px; /* Reduced margin */
+    }
+
+    #reset {
+      margin-top: 5px; /* Reduced margin */
+      padding: 5px; /* Smaller padding */
+      color: black;
+      background-color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 12px; /* Smaller font size */
+    }
+
+    #reset:disabled {
+      background-color: gray;
+      cursor: not-allowed;
+    }
+
+    #countdown {
+      color: white;
+      font-size: 32px; /* Smaller font size */
+      display: none;
+      margin-top: 5px; /* Reduced margin */
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Left: 0 | Right: 0</div>
+  <canvas width="600" height="450" id="game"></canvas> <!-- Smaller canvas -->
+  <div>
+    <button id="reset">Reset Game</button>
+    <div id="countdown"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const context = canvas.getContext('2d');
+    const grid = 10; // Smaller grid size
+    const paddleHeight = grid * 8; // Double the paddle height
+    const maxPaddleY = canvas.height - grid - paddleHeight;
+
+    const defaultBallSpeed = 3; // Slower ball speed
+    const paddleSpeed = defaultBallSpeed * 1.5;
+    let ballSpeed = defaultBallSpeed;
+
+    let leftScore = 0;
+    let rightScore = 0;
+
+    let isCountdownActive = false;
+    let isGameStarted = false;
+
+    const leftPaddle = { x: grid * 2, y: canvas.height / 2 - paddleHeight / 2, width: grid, height: paddleHeight, dy: 0 };
+    const rightPaddle = { x: canvas.width - grid * 3, y: canvas.height / 2 - paddleHeight / 2, width: grid, height: paddleHeight, dy: 0 };
+    const ball = { x: canvas.width / 2, y: canvas.height / 2, width: grid, height: grid, dx: ballSpeed, dy: -ballSpeed };
+
+    function collides(obj1, obj2) {
+      return obj1.x < obj2.x + obj2.width &&
+             obj1.x + obj1.width > obj2.x &&
+             obj1.y < obj2.y + obj2.height &&
+             obj1.y + obj1.height > obj2.y;
+    }
+
+    function updateScoreDisplay() {
+      document.getElementById('score').innerText = `Left: ${leftScore} | Right: ${rightScore}`;
+    }
+
+    function resetBall() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.dx = defaultBallSpeed * (Math.random() < 0.5 ? 1 : -1);
+      ball.dy = defaultBallSpeed * (Math.random() < 0.5 ? 1 : -1);
+      ballSpeed = defaultBallSpeed;
+    }
+
+    function countdown(callback) {
+      const countdownDisplay = document.getElementById('countdown');
+      let timeLeft = 3; // Start the countdown from 3
+      isCountdownActive = true; // Set the flag to prevent movement
+      const resetButton = document.getElementById('reset');
+      resetButton.disabled = true; // Disable reset button
+      resetButton.style.backgroundColor = 'gray'; // Set background color to gray
+      countdownDisplay.style.display = 'block';
+      countdownDisplay.innerText = timeLeft; // Display the initial countdown value
+
+      const interval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft > 0) {
+          countdownDisplay.innerText = timeLeft; // Update the countdown display
+        } else {
+          clearInterval(interval);
+          countdownDisplay.style.display = 'none';
+          isCountdownActive = false; // Allow movement again
+          resetButton.disabled = false; // Enable reset button
+          resetButton.style.backgroundColor = 'white'; // Change background color back to white
+          callback();
+        }
+      }, 1000);
+    }
+
+    function startGame() {
+      isGameStarted = true;
+      resetBall(); // Reset ball immediately
+      countdown(() => {
+        // Nothing needed here since the ball is already reset
+      });
+    }
+
+    function loop() {
+      requestAnimationFrame(loop);
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!isCountdownActive && isGameStarted) {
+        leftPaddle.y += leftPaddle.dy;
+        rightPaddle.y += rightPaddle.dy;
+
+        // Paddle movement boundaries
+        leftPaddle.y = Math.max(grid, Math.min(maxPaddleY, leftPaddle.y));
+        rightPaddle.y = Math.max(grid, Math.min(maxPaddleY, rightPaddle.y));
+
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        // Ball collision with top and bottom walls
+        if (ball.y < grid) {
+          ball.y = grid;
+          ball.dy *= -1;
+        } else if (ball.y + grid > canvas.height - grid) {
+          ball.y = canvas.height - grid * 2;
+          ball.dy *= -1;
+        }
+
+        // Ball collision with paddles and scoring
+        if (ball.x < 0) {
+          rightScore++;
+          updateScoreDisplay();
+          if (rightScore === 5) {
+            alert('Right Player Wins!');
+            resetGame();
+          } else {
+            countdown(resetBall);
+          }
+        } else if (ball.x > canvas.width) {
+          leftScore++;
+          updateScoreDisplay();
+          if (leftScore === 5) {
+            alert('Left Player Wins!');
+            resetGame();
+          } else {
+            countdown(resetBall);
+          }
+        }
+
+        // Paddle and ball collision
+        if (collides(ball, leftPaddle)) {
+          ball.dx *= -1;
+          ballSpeed += 0.5;
+          ball.dx = (ball.dx > 0 ? ballSpeed : -ballSpeed);
+          ball.x = leftPaddle.x + leftPaddle.width;
+        } else if (collides(ball, rightPaddle)) {
+          ball.dx *= -1;
+          ballSpeed += 0.5;
+          ball.dx = (ball.dx > 0 ? ballSpeed : -ballSpeed);
+          ball.x = rightPaddle.x - ball.width;
+        }
+      }
+
+      // Draw paddles and ball
+      context.fillStyle = 'white';
+      context.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
+      context.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
+      context.fillRect(ball.x, ball.y, ball.width, ball.height);
+
+      // Draw court lines
+      context.fillStyle = 'lightgrey';
+      context.fillRect(0, 0, canvas.width, grid);
+      context.fillRect(0, canvas.height - grid, canvas.width, canvas.height);
+
+      for (let i = grid; i < canvas.height - grid; i += grid * 2) {
+        context.fillRect(canvas.width / 2 - grid / 2, i, grid, grid);
+      }
+    }
+
+    function resetGame() {
+      leftScore = 0;
+      rightScore = 0;
+      updateScoreDisplay();
+      leftPaddle.y = canvas.height / 2 - paddleHeight / 2;
+      rightPaddle.y = canvas.height / 2 - paddleHeight / 2;
+      isGameStarted = false; // Reset game state
+      document.getElementById('countdown').style.display = 'none'; // Hide countdown on reset
+      startGame(); // Start game immediately after resetting
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (!isCountdownActive) {
+        // Right Paddle Controls
+        if (e.which === 38) {
+          rightPaddle.dy = -paddleSpeed;
+        } else if (e.which === 40) {
+          rightPaddle.dy = paddleSpeed;
+        }
+
+        // Left Paddle Controls
+        if (e.which === 87) {
+          leftPaddle.dy = -paddleSpeed;
+        } else if (e.which === 83) {
+          leftPaddle.dy = paddleSpeed;
+        }
+      }
+    });
+
+    document.addEventListener('keyup', function(e) {
+      if (e.which === 38 || e.which === 40) {
+        rightPaddle.dy = 0;
+      }
+
+      if (e.which === 83 || e.which === 87) {
+        leftPaddle.dy = 0;
+      }
+    });
+
+    document.getElementById('reset').addEventListener('click', resetGame);
+
+    // Start the game loop
+    startGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

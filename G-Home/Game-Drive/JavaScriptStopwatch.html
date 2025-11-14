@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript Stopwatch</title>
+  <style>
+    /* Variables */
+    :root {
+      --orange: #ffa600;
+      --white: #fff;
+      --base-color: var(--orange);
+    }
+
+    /* Mixin's */
+    .transition {
+      transition: all 0.5s ease-in-out;
+    }
+
+    .corners {
+      border-radius: 5px;
+    }
+
+    body {
+      background: var(--base-color);
+      font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+      height: 100%;
+      margin: 0;
+    }
+
+    .wrapper {
+      width: 800px;
+      margin: 30px auto;
+      color: var(--white);
+      text-align: center;
+    }
+
+    h1, h2 {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 100;
+      font-size: 2.6em;
+      text-transform: uppercase;
+    }
+
+    #hours, #minutes, #seconds, #tens {
+      font-size: 2em;
+    }
+
+    button {
+      background: var(--base-color);
+      color: var(--white);
+      border: solid 1px var(--white);
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 1.2em;
+      padding: 18px 10px;
+      width: 180px;
+      margin: 10px;
+      outline: none;
+      border-radius: 5px;
+      transition: all 0.5s ease-in-out;
+    }
+
+    button:hover {
+      background: var(--white);
+      border: solid 1px var(--white);
+      color: var(--base-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>Stopwatch</h1>
+    <h2>JavaScript Stopwatch</h2>
+    <p>
+      <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>:<span id="tens">00</span>
+    </p>
+    <button id="button-start">Start</button>
+    <button id="button-stop">Stop</button>
+    <button id="button-reset">Reset</button>
+  </div>
+
+  <script>
+    window.onload = function () {
+
+      // Initialize variables
+      var hours = 0; 
+      var minutes = 0;
+      var seconds = 0; 
+      var tens = 0;
+      var appendHours = document.getElementById("hours");
+      var appendMinutes = document.getElementById("minutes");
+      var appendSeconds = document.getElementById("seconds");
+      var appendTens = document.getElementById("tens");
+      var buttonStart = document.getElementById('button-start');
+      var buttonStop = document.getElementById('button-stop');
+      var buttonReset = document.getElementById('button-reset');
+      var Interval;
+
+      // Start button event
+      buttonStart.onclick = function () {
+        clearInterval(Interval);  // Clear any existing interval
+        Interval = setInterval(startTimer, 10);  // Start the timer with an interval of 10 milliseconds
+      }
+
+      // Stop button event
+      buttonStop.onclick = function () {
+        clearInterval(Interval);  // Stop the timer
+      }
+
+      // Reset button event
+      buttonReset.onclick = function () {
+        clearInterval(Interval);  // Clear interval to stop the timer
+        hours = 0;
+        minutes = 0;
+        seconds = 0;
+        tens = 0;
+        appendHours.innerHTML = "00";  // Reset hours display
+        appendMinutes.innerHTML = "00";  // Reset minutes display
+        appendSeconds.innerHTML = "00";  // Reset seconds display
+        appendTens.innerHTML = "00";  // Reset tens display
+      }
+
+      // Timer function
+      function startTimer () {
+        tens++;  // Increment tens
+
+        if (tens <= 9) {
+          appendTens.innerHTML = "0" + tens;  // Add leading zero if tens < 10
+        }
+
+        if (tens > 9) {
+          appendTens.innerHTML = tens;  // No leading zero if tens > 9
+        }
+
+        if (tens > 99) {  // When tens reach 100, reset tens and increment seconds
+          tens = 0;
+          seconds++;
+          appendSeconds.innerHTML = "0" + seconds;
+        }
+
+        if (seconds > 9) {
+          appendSeconds.innerHTML = seconds;  // No leading zero if seconds > 9
+        }
+
+        if (seconds >= 60) {  // When seconds reach 60, reset seconds and increment minutes
+          seconds = 0;
+          minutes++;
+          appendMinutes.innerHTML = "0" + minutes;
+        }
+
+        if (minutes > 9) {
+          appendMinutes.innerHTML = minutes;  // No leading zero if minutes > 9
+        }
+
+        if (minutes >= 60) {  // When minutes reach 60, reset minutes and increment hours
+          minutes = 0;
+          hours++;
+          appendHours.innerHTML = "0" + hours;
+        }
+
+        if (hours > 9) {
+          appendHours.innerHTML = hours;  // No leading zero if hours > 9
+        }
+      }
+
+    }
+  </script>
+</body>
+</html>

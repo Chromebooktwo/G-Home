@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Downgraded Flappy Bird</title>
+<style>
+  body, html {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    background-color: #87CEEB;
+  }
+  #e {
+    border: solid 1px;
+  }
+  #game-over {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-family: Arial, sans-serif;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  .score-text {
+    font-size: 20px;
+  }
+</style>
+</head>
+<body>
+<canvas id="e" width="320" height="480"></canvas>
+<div id="game-over">
+  <div class="score-text">Score: <span id="score"></span></div>
+  <div class="score-text">High Score: <span id="high-score"></span></div>
+  <button onclick="restartGame()">Restart</button>
+</div>
+
+<script>
+  var m = Math,
+      e = document.getElementById('e'),
+      c = e.getContext('2d'),
+      f = 0,
+      t = 0;
+
+  var flappyTopScore = 0;
+
+  function drawFlappyScores(currentFlappyScore, flappyTopScore) {
+    c.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    c.fillRect(0, 0, 320, 40);
+    c.fillStyle = 'white';
+    c.font = 'bold 16px Arial';
+    c.textAlign = 'left';
+    c.fillText('Score: ' + currentFlappyScore, 10, 25);
+    c.textAlign = 'right';
+    c.fillText('High Score: ' + flappyTopScore, 310, 25);
+  }
+
+  function r() {
+    f = 1;
+    k = 10;
+    v = 0;
+    var currentFlappyScore = 0,
+        w = [],
+        i = 0,
+        l = 0,
+        birdX = 35, // Bird's x-position
+        g = setInterval(function() {
+      if (!w[0] || w[w.length - 1].x < 20) {
+        w.push({
+          x: 80,
+          h: ~~(m.random() * 80),
+          q: 0
+        });
+      }
+      if (w[0].x < -20) {
+        w.shift();
+      }
+      v += 0.025;
+      if (t > 0) {
+        t -= 0.01;
+        v = -0.75;
+      }
+      k += v;
+      for (i in w) {
+        w[i].x -= 0.2;
+      }
+      c.clearRect(0, 0, 320, 480);
+      c.fillStyle = '#87CEEB';
+      c.fillRect(0, 0, 320, 480);
+      
+      c.beginPath();
+      c.fillStyle = 'yellow';
+      c.arc(birdX * 4, (k + 5) * 4, 20, 0, 2 * m.PI);
+      c.fill();
+      c.fillStyle = 'green';
+      for (i in w) {
+        l = w[i];
+        c.fillRect(l.x * 4, 0, 80, l.h * 4);
+        c.fillRect(l.x * 4, (l.h + 40) * 4, 80, 480);
+      }
+      
+      drawFlappyScores(currentFlappyScore, flappyTopScore);
+      
+      for (i in w) {
+        l = w[i];
+        // Check for collision
+        if (birdX > l.x && birdX < l.x + 20 && (k < l.h || k > l.h + 30) ||
+            k > 110) {
+          clearInterval(g);
+          if (currentFlappyScore > flappyTopScore) {
+            flappyTopScore = currentFlappyScore;
+          }
+          showGameOver(currentFlappyScore, flappyTopScore);
+          f = 0;
+          disableKeyboardInput();
+        }
+        // Score when bird passes the middle of the wall
+        if (!l.q && birdX > l.x + 10) {
+          currentFlappyScore += 1;
+          l.q = 1;
+          if (currentFlappyScore > flappyTopScore) {
+            flappyTopScore = currentFlappyScore;
+          }
+        }
+      }
+    }, 10);
+  }
+
+  function d(x, y) {
+    return m.sqrt((birdX - x) * (birdX - x) + m.pow(k + 5 - y, 2));
+  }
+
+  function showGameOver(finalScore, topScore) {
+    var gameOverDiv = document.getElementById('game-over');
+    document.getElementById('score').innerText = finalScore;
+    document.getElementById('high-score').innerText = topScore;
+    gameOverDiv.style.display = 'block';
+  }
+
+  function restartGame() {
+    var gameOverDiv = document.getElementById('game-over');
+    gameOverDiv.style.display = 'none';
+    c.clearRect(0, 0, 320, 480);
+    c.fillStyle = '#87CEEB';
+    c.fillRect(0, 0, 320, 480);
+    c.fillStyle = 'black';
+    c.font = 'bold 24px Arial';
+    c.textAlign = 'center';
+    c.fillText('Hit space to start', 160, 240);
+    enableKeyboardInput();
+  }
+
+  function disableKeyboardInput() {
+    window.onkeydown = null;
+  }
+
+  function enableKeyboardInput() {
+    window.onkeydown = function(e) {
+      e.keyCode === 32 && (t = 0.1) && !f && r();
+    };
+  }
+
+  enableKeyboardInput();
+
+  c.font = 'bold 24px Arial';
+  c.textAlign = 'center';
+  c.fillStyle = '#87CEEB';
+  c.fillRect(0, 0, 320, 480);
+  c.fillStyle = 'black';
+  c.fillText('Hit space to start', 160, 240);
+
+</script>
+</body>
+</html>

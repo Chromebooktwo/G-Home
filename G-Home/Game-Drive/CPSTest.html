@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/lib/bootstrap/bootstrap4small.css">
+<style>
+/* General Reset */
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+
+body {
+font-family: Arial, sans-serif;
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100vh;
+background-color: #f5f5f5;
+color: #333;
+}
+
+#wrapper {
+width: 100%;
+max-width: 800px;
+padding: 20px;
+background-color: #fff;
+border-radius: 10px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+text-align: center;
+}
+
+#header h1 {
+font-size: 2rem;
+color: #007bff;
+margin-bottom: 1rem;
+}
+
+#header h3 {
+font-size: 1.25rem;
+color: #666;
+margin-bottom: 1.5rem;
+}
+
+/* Instructions */
+.instructions {
+margin-top: 1rem;
+text-align: center; /* Center the instructions */
+font-size: 1rem;
+}
+
+.instructions p {
+margin-bottom: 0.5rem; /* Space between paragraphs */
+color: #333;
+}
+
+/* Styling for other sections */
+.form-row {
+display: flex;
+justify-content: space-between;
+width: 100%;
+margin-bottom: 1rem;
+}
+
+.form-group {
+flex: 1;
+margin-right: 10px;
+}
+
+.form-group:last-child {
+margin-right: 0;
+}
+
+label {
+font-weight: bold;
+margin-bottom: 0.5rem;
+font-size: 1rem;
+}
+
+input[type="number"],
+input[type="text"],
+button {
+width: 100%;
+padding: 1rem;
+font-size: 1rem;
+border-radius: 0.25rem;
+border: 1px solid #ccc;
+margin-bottom: 1rem;
+box-sizing: border-box;
+}
+
+#addbtn {
+background-color: #28a745;
+color: white;
+font-size: 2rem;
+border: none;
+cursor: pointer;
+transition: background-color 0.3s ease;
+}
+
+#addbtn:active {
+background-color: #218838;
+}
+
+#resetbtn {
+background-color: #6c757d;
+color: white;
+font-size: 1.5rem;
+border: none;
+cursor: pointer;
+transition: background-color 0.3s ease;
+}
+
+#resetbtn:active {
+background-color: #5a6268;
+}
+
+#message {
+font-size: 1.2rem;
+color: red;
+margin-top: 1rem;
+display: none;
+}
+
+.time-up {
+color: red !important;
+font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div id="wrapper">
+<div id="header">
+<h1>CPS Test</h1>
+<h3>Check your clicks per second (CPS).</h3>
+<div class="instructions">
+<p>Set the test time, recommended 10 seconds.</p>
+<p>Click "+" to start and keep clicking to gain your CPS.</p>
+<p>Try to click as fast as you can, try to get the highest CPS!</p>
+<p>Click "Reset" to try again.</p>
+<p>Good Luck!</p>
+</div>
+</div>
+
+<form id="gen">
+<div class="form-row">
+<div class="form-group">
+<label for="timerInput">Test time (seconds)</label>
+<input type="number" min="1" max="100" id="timerInput" class="form-control">
+</div>
+<div class="form-group">
+<label for="count">Clicks</label>
+<input type="number" id="count" class="form-control" readonly>
+</div>
+</div>
+
+<div id="outdiv" class="form-row">
+<div class="form-group">
+<label for="cps">Clicks per second</label>
+<input type="text" id="cps" class="form-control" readonly>
+</div>
+<div class="form-group">
+<label for="cpm">Clicks per minute</label>
+<input type="text" id="cpm" class="form-control" readonly>
+</div>
+</div>
+
+<div class="form-group">
+<label>Click the + button to start and keep clicking it to get your CPS ranking.</label>
+<button type="button" id="addbtn" onclick="onAdd(event)">+</button>
+</div>
+
+<div class="form-group">
+<button type="button" id="resetbtn" onclick="onReset()">Reset</button>
+</div>
+</form>
+
+<div id="timerDisplay"></div>
+<div id="message"></div>
+</div>
+
+<script>
+"use strict";
+let num = 0, t = 0, timeout, tstart, tend, duration = 10, iskeyup = true;
+const timerInput = document.getElementById("timerInput");
+const timerDisplay = document.getElementById("timerDisplay");
+const count = document.getElementById("count");
+const cpsElem = document.getElementById("cps");
+const cpmElem = document.getElementById("cpm");
+const addbtn = document.getElementById("addbtn");
+const messageElem = document.getElementById("message");
+
+function onAdd(e) {
+if (num === 0) {
+tstart = Date.now();
+timeout = setTimeout(onTime, 1000);
+duration = parseInt(timerInput.value);
+timerInput.disabled = true;
+timerDisplay.textContent = duration;
+document.body.style.overflow = "hidden";
+}
+
+if (parseInt(timerDisplay.textContent) > 0) {
+count.value = ++num;
+}
+}
+
+function onReset() {
+num = 0;
+t = 0;
+duration = parseInt(timerInput.value);
+timerInput.disabled = false;
+timerDisplay.textContent = duration;
+timerDisplay.classList.remove('time-up');
+count.value = 0;
+cpsElem.value = "";
+cpmElem.value = "";
+addbtn.disabled = false;
+clearTimeout(timeout);
+document.body.style.overflow = "visible";
+messageElem.style.display = "none";
+}
+
+function onTime() {
+if (parseInt(timerDisplay.textContent) > 1) {
+timeout = setTimeout(onTime, 1000);
+}
+
+timerDisplay.textContent = parseInt(timerDisplay.textContent) - 1;
+t++;
+cpsElem.value = (count.value / t).toFixed(2);
+cpmElem.value = (60 * count.value / t).toFixed(2);
+
+if (parseInt(timerDisplay.textContent) > 0) {
+// Timer is still running, do nothing
+} else {
+addbtn.disabled = true;
+tend = Date.now();
+document.body.style.overflow = "visible";
+clearTimeout(timeout);
+
+// Update the display with the "no time left" message
+timerDisplay.textContent = "No time left, press reset button to try again!";
+timerDisplay.classList.add('time-up');
+}
+}
+</script>
+</body>
+</html>

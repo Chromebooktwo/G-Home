@@ -1,0 +1,199 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh; /* Ensures the body takes up full height */
+    display: block; /* Removed flex from body to avoid global centering */
+    text-align: center; /* Ensures text is centered by default */
+    overflow-x: hidden; /* Prevents horizontal scrolling */
+}
+
+/* Header Styles */
+header {
+    background-color: #bd0f0f;
+    color: white;
+    padding: 20px 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    text-align: center; /* Ensures header text is centered */
+}
+
+h1 {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    font-size: 2.4rem;
+}
+
+/* Image Styles */
+.logo-1,
+.logo-2 {
+    display: block;
+    margin: 30px auto; /* Centers the images horizontally */
+    max-width: 900px;
+    width: 100%;
+    height: auto;
+}
+
+/* Main Content */
+h2 {
+    font-size: 2rem;
+    margin: 15px 0;
+    color: #333;
+}
+
+p {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    line-height: 1.8;
+    word-wrap: break-word; /* Ensures long words break */
+    overflow-wrap: break-word; /* Ensures long words break */
+    word-break: break-word; /* Ensures long words break */
+    max-width: 100%; /* Ensure it doesn't go outside boundaries */
+    overflow: hidden; /* Prevent overflow beyond boundaries */
+}
+
+ul {
+    list-style-type: none; /* Remove the default list bullets */
+    padding: 0;
+    margin: 15px auto; /* Reduced the gap between list and surrounding content */
+    max-width: 900px;
+    width: 90%; /* Make the list width responsive */
+    text-align: left; /* Align the list items to the left for better readability */
+    overflow-wrap: break-word; /* Ensures long words break */
+}
+
+ul li {
+    font-size: 1.1rem;
+    margin: 8px 0; /* Reduced margin for a more compact list */
+    line-height: 1.6;
+    word-wrap: break-word; /* Ensures long words break */
+    overflow-wrap: break-word; /* Ensures long words break */
+    word-break: break-word; /* Ensures long words break */
+    max-width: 100%; /* Prevent overflow of list items */
+}
+
+ul li strong {
+    color: #BD0F0F; /* Highlight the section titles with a different color */
+    font-weight: bold;
+}
+
+/* Section Styles */
+section {
+    margin: 15px auto; /* Reduced the margin for closer sections */
+    padding: 20px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    width: 100%; /* Ensures section is responsive */
+    word-wrap: break-word; /* Ensures long words break */
+    overflow-wrap: break-word; /* Ensures long words break */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers the content within the section */
+    overflow-x: hidden; /* Prevent horizontal scrolling in sections */
+}
+
+/* Footer Styles */
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #333;
+    color: white;
+    position: relative;
+    width: 100%;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+}
+
+footer p {
+    margin: 0;
+    font-size: 1em;
+}
+
+/* Link Styles */
+a {
+    color: #0066cc; /* Sets the color of the links */
+    text-decoration: none; /* Removes underline from links */
+    display: inline; /* Keeps links inline for natural text flow */
+    word-wrap: break-word; /* Ensures long links break */
+    overflow-wrap: break-word; /* Ensures long links break */
+    word-break: break-word; /* Ensures very long links break */
+    max-width: 100%; /* Prevent overflow of links */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    /* Navbar adjustments */
+    .navbar {
+        flex-direction: column;
+        align-items: center; /* Centers the navbar on smaller screens */
+        justify-content: center; /* Centers the content within the navbar */
+        width: 100%;
+    }
+
+    .menu {
+        flex-direction: column;
+        align-items: center; /* Centers the menu on smaller screens */
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .cta-button {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.2rem;
+    }
+
+    /* Header font size adjustment */
+    header h1 {
+        font-size: 2.2rem; /* Adjusted font size for smaller screens */
+    }
+
+    /* Main content adjustments */
+    h2 {
+        font-size: 1.8rem;
+    }
+
+    /* Ensure images are responsive */
+    .logo-1, .logo-2 {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    /* Adjust the list items for smaller screens */
+    ul {
+        width: 95%; /* Ensure the list doesn't overflow */
+    }
+}
+
+@media (max-width: 480px) {
+    /* Adjust button size for smaller screens */
+    .cta-button {
+        padding: 12px 15px;
+        font-size: 16px;
+    }
+
+    /* Adjust menu link font size for smaller screens */
+    .menu-link {
+        font-size: 16px;
+    }
+
+    /* Make images responsive */
+    .logo-1, .logo-2 {
+        width: 100%;
+        height: auto;
+    }
+
+    /* Adjust list item font size for better readability */
+    ul li {
+        font-size: 1rem;
+    }
+}

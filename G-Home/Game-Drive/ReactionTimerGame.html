@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Timer Game</title>
+    <style>
+        /* General Layout */
+        #topcontainer {
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Play Area */
+        #play-area {
+            width: 800px;
+            height: 400px;
+            border: 3px solid #4CAF50;
+            margin: 20px auto;
+            position: relative;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        /* Circle Styling */
+        #circle {
+            width: 200px;
+            height: 200px;
+            background-color: transparent;
+            display: none;
+            position: absolute;
+            cursor: pointer;
+            border-radius: 50%; /* Make it always a circle */
+        }
+
+        /* Start Game Screen */
+        #start-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        #start-screen h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        /* Timer */
+        h1, h2, h3 {
+            font-family: Arial, sans-serif;
+        }
+
+        #timer {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        #live-timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 1.2em;
+        }
+
+        /* Buttons */
+        button {
+            padding: 12px 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            background-color: #3e8e41;
+            transform: scale(1);
+        }
+
+        #try-again-btn {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Game Screen -->
+    <div id="start-screen">
+        <div>
+            <h1>Welcome to the Reaction Timer Game!</h1>
+            <h3>Try to click on the circle as quickly as possible after it appears.</h3>
+            <p>Click the "Start Game" button below to begin.</p>
+            <button id="start-game-btn" onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Top Container with Instructions and Timer -->
+    <div id="topcontainer" style="display: none;">
+        <div>
+            <h1>Test Your Reactions!</h1>
+            <h2>Click on the circles as quickly as you can!</h2>
+            <h3>Time: <span id="timer">0.0s (0ms)</span></h3>
+        </div>
+        
+        <!-- Play Area -->
+        <div id="play-area">
+            <div id="live-timer">0.0s (0ms)</div>
+            <div id="circle"></div>
+        </div>
+        
+        <button id="try-again-btn" onclick="restartGame()">Try Again</button>
+    </div>
+
+    <script>
+        var start = 0;
+        var timerInterval;
+        var timerDisplay = document.getElementById("timer");
+        var liveTimerDisplay = document.getElementById("live-timer");
+        var circleElement = document.getElementById("circle");
+        var tryAgainButton = document.getElementById("try-again-btn");
+        var startScreen = document.getElementById("start-screen");
+        var topContainer = document.getElementById("topcontainer");
+        var playArea = document.getElementById("play-area");
+
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function updateLiveTimer() {
+            if (start === 0) return;
+            
+            var current = new Date().getTime();
+            var timeTakenInMilliseconds = current - start;
+            var timeTakenInSeconds = timeTakenInMilliseconds / 1000;
+            var timeDisplay = timeTakenInSeconds.toFixed(1) + "s (" + Math.floor(timeTakenInMilliseconds) + "ms)";
+            
+            // Update both displays with the same time
+            liveTimerDisplay.innerHTML = timeDisplay;
+            timerDisplay.innerHTML = timeDisplay;
+        }
+
+        function makeCircleAppear() {
+            var playAreaRect = playArea.getBoundingClientRect();
+            var maxSize = 100; // Maximum circle size
+            var width = Math.random() * (maxSize - 30) + 30; // Random size between 30 and maxSize
+            
+            // Calculate random position within play area
+            var top = Math.random() * (playAreaRect.height - width);
+            var left = Math.random() * (playAreaRect.width - width);
+
+            // Always make it a circle
+            circleElement.style.borderRadius = "50%";  // Circle
+            circleElement.style.backgroundColor = getRandomColor();
+            circleElement.style.top = top + "px";
+            circleElement.style.left = left + "px";
+            circleElement.style.height = width + "px";
+            circleElement.style.width = width + "px";
+            circleElement.style.display = "block";
+            
+            start = new Date().getTime();
+            timerInterval = setInterval(updateLiveTimer, 10); // Update timer every 10ms
+        }
+
+        function appearAfterDelay() {
+            setTimeout(makeCircleAppear, Math.random() * 2000);
+        }
+
+        function startGame() {
+            startScreen.style.display = "none";
+            topContainer.style.display = "flex";
+            tryAgainButton.style.display = "none";
+            liveTimerDisplay.innerHTML = "0.0s (0ms)";
+            timerDisplay.innerHTML = "0.0s (0ms)";
+            appearAfterDelay();
+        }
+
+        circleElement.onclick = function () {
+            clearInterval(timerInterval);
+            circleElement.style.display = "none";
+            tryAgainButton.style.display = "inline-block";
+        };
+
+        function restartGame() {
+            clearInterval(timerInterval);
+            timerDisplay.innerHTML = "0.0s (0ms)";
+            liveTimerDisplay.innerHTML = "0.0s (0ms)";
+            startScreen.style.display = "flex";
+            topContainer.style.display = "none";
+            tryAgainButton.style.display = "none";
+            start = 0;
+        }
+    </script>
+</body>
+</html>

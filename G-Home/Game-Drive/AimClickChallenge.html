@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Click Game</title>
+    <style>
+        #target {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            display: none;
+        }
+        #game-over-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding-top: 20%;
+        }
+        #high-score {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #play-again-button {
+            font-size: 18px;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Click the moving target as many times as you can!</h1>
+    <div id="target"></div>
+    <p>Score: <span id="score">0</span> | High Score: <span id="high-score-value">0</span></p>
+    <p>Time Left: <span id="time-left">30</span> seconds</p>
+    <p>
+        Move Interval: <input type="range" id="move-interval" min="100" max="2000" value="1000" step="100">
+    </p>
+    <p>
+        Target Width: <input type="range" id="target-width" min="10" max="100" value="50" step="10">
+    </p>
+    <p>
+        Target Height: <input type="range" id="target-height" min="10" max="100" value="50" step="10">
+    </p>
+    <p>
+        Time Limit: <input type="range" id="time-limit" min="10" max="60" value="30" step="5">
+    </p>
+    <button id="start-button" onclick="startGame()">Start</button>
+
+    <div id="game-over-screen">
+        <h2>Game Over!</h2>
+        <p>Your final score is: <span id="final-score"></span></p>
+        <p id="high-score">High Score: <span id="high-score-value-end">0</span></p>
+        <button id="play-again-button" onclick="resetGame()">Play Again</button>
+    </div>
+
+    <script>
+        var target = document.getElementById("target");
+        var score = document.getElementById("score");
+        var highScoreValue = document.getElementById("high-score-value");
+        var highScoreValueEnd = document.getElementById("high-score-value-end");
+        var timeLeft = document.getElementById("time-left");
+        var moveInterval = document.getElementById("move-interval");
+        var targetWidth = document.getElementById("target-width");
+        var targetHeight = document.getElementById("target-height");
+        var timeLimit = document.getElementById("time-limit");
+        var gameOverScreen = document.getElementById("game-over-screen");
+        var finalScoreSpan = document.getElementById("final-score");
+
+        var scoreCount = 0;
+        var intervalId;
+        var timeId;
+        var highScore = 0;
+        var gameActive = false;
+
+        target.addEventListener("click", function() {
+            if (gameActive) {
+                scoreCount++;
+                score.innerHTML = scoreCount;
+                if (scoreCount > highScore) {
+                    highScore = scoreCount;
+                    updateHighScore();
+                }
+            }
+        });
+
+        function updateHighScore() {
+            highScoreValue.innerHTML = highScore;
+            highScoreValueEnd.innerHTML = highScore;
+        }
+
+        function startGame() {
+            gameActive = true;
+            scoreCount = 0;
+            score.innerHTML = scoreCount;
+            timeLeft.innerHTML = timeLimit.value;
+            target.style.width = targetWidth.value + "px";
+            target.style.height = targetHeight.value + "px";
+            target.style.display = "block";
+
+            intervalId = setInterval(function() {
+                var x = Math.floor(Math.random() * (window.innerWidth - targetWidth.value));
+                var y = Math.floor(Math.random() * (window.innerHeight - targetHeight.value));
+                target.style.left = x + "px";
+                target.style.top = y + "px";
+            }, moveInterval.value);
+
+            timeId = setInterval(function() {
+                timeLeft.innerHTML = --timeLeft.innerHTML;
+                if (timeLeft.innerHTML == 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            document.getElementById("start-button").disabled = true;
+        }
+
+        function endGame() {
+            clearInterval(intervalId);
+            clearInterval(timeId);
+            gameActive = false;
+            target.style.display = "none";
+
+            finalScoreSpan.innerHTML = scoreCount;
+            gameOverScreen.style.display = "block";
+        }
+
+        function resetGame() {
+            gameOverScreen.style.display = "none";
+            document.getElementById("start-button").disabled = false;
+            score.innerHTML = "0";
+            timeLeft.innerHTML = timeLimit.value;
+        }
+
+        // Initialize high score display
+        updateHighScore();
+    </script>
+</body>
+</html>
