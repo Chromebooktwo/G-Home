@@ -1,5 +1,5 @@
 #Hello, welcome! This is the robots.txt for the G - Home website.
-#G - Home website link:   https://www.g-home.xyz
+#G - Home website link: https://www.g-home.xyz
 
 User-agent: *
 Disallow: /G-Home/Games/
