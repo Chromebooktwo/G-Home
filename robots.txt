@@ -2,6 +2,7 @@
 #G - Home website link:   https://www.g-home.xyz
 
 User-agent: *
-Disallow:
+Disallow: /G-Home/Games/
+Disallow: /G-Home/Game-Drive/
 
 Sitemap: https://www.g-home.xyz/sitemap.xml
