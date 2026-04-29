@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            color: #776e65;
+        }
+
+        html, body {
+            height: 100%;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: antiquewhite;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 30rem;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: auto;
+        }
+
+        .head {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .title {
+            font-size: 3.75rem;
+            font-weight: bold;
+        }
+
+        .score-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .score, .high-score {
+            color: white;
+            background-color: #776e65;
+            height: 3rem;
+            width: 8rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .board {
+            height: 25rem;
+            width: 25rem;
+            background: #cdc1b5;
+            border: 0.3125rem solid #bbada0;
+            border-radius: 0.3125rem;
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .new-game {
+            text-decoration: none;
+            color: white;
+            background-color: #776e65;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .new-game:hover {
+            background-color: #5f4d44;
+        }
+
+        .tile {
+            height: 5.625rem;
+            width: 5.625rem;
+            border: 0.3125rem solid #bbada0;
+            font-size: 3.125rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 500ms all linear;
+        }
+
+        .footer {
+            width: 100%;
+            text-align: center;
+            margin-top: auto;
+            padding-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .game-over button {
+            background-color: #776e65;
+            color: white;
+            font-size: 1.5rem;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            margin-top: 2rem;
+        }
+
+        .game-over button:hover {
+            background-color: #5f4d44;
+        }
+
+        /* Color classes for tiles remain the same as in original CSS */
+        .b2 { background-color: #eee4da; color: #727371; }
+        .b4 { background-color: #ece0ca; color: #727371; }
+        .b8 { background-color: #f4b17a; color: white; }
+        .b16 { background-color: #f59575; color: white; }
+        .b32 { background-color: #f57c5f; color: white; }
+        .b64 { background-color: #f65d3b; color: white; }
+        .b128 { background-color: #edce71; color: white; }
+        .b256 { background-color: #edcc63; color: white; }
+        .b512 { background-color: #edc651; color: white; }
+        .b1024 { background-color: #eec744; color: white; }
+        .b2048 { background-color: #ecc230; color: white; }
+        .b4096 { background-color: #fe3d3d; color: white; }
+        .b8192 { background-color: #ff2020; color: white; }
+
+        @media only screen and (max-width: 600px) {
+            .board {
+                height: 20rem;
+                width: 20rem;
+            }
+
+            .tile {
+                height: 4.5rem;
+                width: 4.5rem;
+                font-size: 2.5rem;
+            }
+
+            .score, .high-score {
+                font-size: 1.3rem;
+                height: 2.5rem;
+                width: 6rem;
+            }
+
+            .new-game {
+                padding: 0.8rem 1.2rem;
+                font-size: 1.2rem;
+            }
+
+            .game-over {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="top" class="container">
+        <div class="head">
+            <span class="title">2048</span>
+            <div class="score-container">
+                <span class="score" id="score">Score: 0</span>
+                <span class="high-score" id="high-score">High Score: 0</span>
+            </div>
+        </div>
+
+        <div class="board" id="board"></div>
+
+        <button class="new-game" onclick="resetGame()">New Game</button>
+
+        <div class="footer">
+            <p><b>HOW TO PLAY: </b>Use your arrow keys to move the tiles. Tiles with the same number merge into one when they touch. Add them up to reach 2048!</p>
+            <a href="#top"><b>Start Playing!</b></a>
+            <br><br>
+            <p>Created by <b><a href="https://github.com/BasimAhmedKhan" target="_blank">Basim Khan</a></b>. Based on 2048 by <b><a href="https://play2048.co/" target="_blank">Gabriele Cirulli.</a></b>.</p>
+        </div>
+
+        <div class="game-over" id="game-over">
+            <p>Game Over!</p>
+            <p>Final Score: <span id="final-score"></span></p>
+            <p>High Score: <span id="game-over-high-score"></span></p>
+            <button onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript remains the same as in the original file
+        let board;
+        let score = 0;
+        const rows = 4;
+        const columns = 4;
+        let highScore = localStorage.getItem("highScore") || 0;
+        document.getElementById("high-score").innerText = `High Score: ${highScore}`;
+
+        window.onload = function() {
+            setGame();
+        }
+
+        function resetGame() {
+            score = 0;
+            document.getElementById("score").innerText = "Score: " + score;
+            setGame();
+            document.getElementById("game-over").style.display = "none";
+        }
+
+        function setGame() {
+            board = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ];
+
+            document.getElementById("board").innerHTML = "";
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < columns; c++) {
+                    let tile = document.createElement("div");
+                    tile.id = r.toString() + "-" + c.toString();
+                    let num = board[r][c];
+                    updateTile(tile, num);
+                    document.getElementById("board").append(tile);
+                }
+            }
+
+            setTwo();
+            setTwo();
+        }
+
+        function updateTile(tile, num) {
+            tile.innerText = "";
+            tile.classList.value = "";
+            tile.classList.add("tile");
+            if (num > 0) {
+                tile.innerText = num.toString();
+                if (num <= 4096) {
+                    tile.classList.add("b" + num.toString());
+                } else {
+                    tile.classList.add("b8192");
+                }
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === "ArrowLeft") {
+                slideLeft();
+                setTwo();
+            } else if (e.code === "ArrowRight") {
+                slideRight();
+                setTwo();
+            } else if (e.code === "ArrowUp") {
+                slideUp();
+                setTwo();
+            } else if (e.code === "ArrowDown") {
+                slideDown();
+                setTwo();
+            }
+            document.getElementById("score").innerText = "Score: " + score;
+            if (score > highScore) {
+                highScore = score;
+                document.getElementById("high-score").innerText = `High Score: ${highScore}`;
+                localStorage.setItem("highScore", highScore);
+            }
+
+            // Check for game over condition
+            if (!hasEmptyTile() && !canMove()) {
+                document.getElementById("final-score").innerText = score;
+                document.getElementById("game-over-high-score").innerText = highScore;
+                document.getElementById("game-over").style.display = "flex";
+            }
+        });
+
+        function filterZero(row) {
+            return row.filter(num => num !== 0);
+        }
+
+        function slide(row) {
+            row = filterZero(row);
+            for (let i = 0; i < row.length - 1; i++) {
+                if (row[i] === row[i + 1]) {
+                    row[i] *= 2;
+                    row[i + 1] = 0;
+                    score += row[i];
+                }
+            }
+            row = filterZero(row);
+            while (row.length < columns) {
+                row.push(0);
+            }
+            return row;
+        }
+
+        function slideLeft() {
+            for (let r = 0; r < rows; r++) {
+                let row = board[r];
+                row = slide(row);
+                board[r] = row;
+                for (let c = 0; c < columns; c++) {
+                    let tile = document.getElementById(r.toString() + "-" + c.toString());
+                    let num = board[r][c];
+                    updateTile(tile, num);
+                }
+            }
+        }
+
+        function slideRight() {
+            for (let r = 0; r < rows; r++) {
+                let row = board[r];
+                row.reverse();
+                row = slide(row);
+                board[r] = row.reverse();
+                for (let c = 0; c < columns; c++) {
+                    let tile = document.getElementById(r.toString() + "-" + c.toString());
+                    let num = board[r][c];
+                    updateTile(tile, num);
+                }
+            }
+        }
+
+        function slideUp() {
+            for (let c = 0; c < columns; c++) {
+                let row = [board[0][c], board[1][c], board[2][c], board[3][c]];
+                row = slide(row);
+                for (let r = 0; r < rows; r++) {
+                    board[r][c] = row[r];
+                    let tile = document.getElementById(r.toString() + "-" + c.toString());
+                    let num = board[r][c];
+                    updateTile(tile, num);
+                }
+            }
+        }
+
+        function slideDown() {
+            for (let c = 0; c < columns; c++) {
+                let row = [board[0][c], board[1][c], board[2][c], board[3][c]];
+                row.reverse();
+                row = slide(row);
+                row.reverse();
+                for (let r = 0; r < rows; r++) {
+                    board[r][c] = row[r];
+                    let tile = document.getElementById(r.toString() + "-" + c.toString());
+                    let num = board[r][c];
+                    updateTile(tile, num);
+                }
+            }
+        }
+
+        function setTwo() {
+            if (!hasEmptyTile()) return;
+            let found = false;
+            while (!found) {
+                let r = Math.floor(Math.random() * rows);
+                let c = Math.floor(Math.random() * columns);
+                if (board[r][c] === 0) {
+                    board[r][c] = 2;
+                    let tile = document.getElementById(r.toString() + "-" + c.toString());
+                    tile.innerText = "2";
+                    tile.classList.add("b2");
+                    found = true;
+                }
+            }
+        }
+
+        function hasEmptyTile() {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < columns; c++) {
+                    if (board[r][c] === 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function canMove() {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < columns; c++) {
+                    if (r < rows - 1 && board[r][c] === board[r + 1][c]) return true;
+                    if (c < columns - 1 && board[r][c] === board[r][c + 1]) return true;
+                }
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

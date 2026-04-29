@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Frogger Game</title>
+
+  <style>
+
+    body {
+
+      margin: 0;
+
+      padding: 0;
+
+      height: 100vh;
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      background-color: #1a1a1a;
+
+      font-family: Arial, sans-serif;
+
+    }
+
+    #gameContainer {
+
+      position: relative;
+
+    }
+
+    canvas {
+
+      border: 2px solid #4CAF50;
+
+    }
+
+    .screen {
+
+      position: absolute;
+
+      top: 0;
+
+      left: 0;
+
+      width: 100%;
+
+      height: 100%;
+
+      display: flex;
+
+      flex-direction: column;
+
+      justify-content: center;
+
+      align-items: center;
+
+      background-color: rgba(0, 0, 0, 0.8);
+
+      color: white;
+
+      text-align: center;
+
+    }
+
+    h1 {
+
+      font-size: 48px;
+
+      margin-bottom: 20px;
+
+      color: #4CAF50;
+
+    }
+
+    button {
+
+      font-size: 24px;
+
+      padding: 10px 20px;
+
+      margin-top: 20px;
+
+      background-color: #4CAF50;
+
+      color: white;
+
+      border: none;
+
+      cursor: pointer;
+
+      transition: background-color 0.3s;
+
+    }
+
+    button:hover {
+
+      background-color: #45a049;
+
+    }
+
+    #scoreBoard {
+
+      position: absolute;
+
+      top: 10px;
+
+      left: 10px;
+
+      font-size: 18px;
+
+      color: white;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div id="gameContainer">
+
+    <canvas width="624" height="720" id="game"></canvas>
+
+    <div id="startScreen" class="screen">
+
+      <h1>Frogger</h1>
+
+      <p>Use arrow keys to move the frog</p>
+
+      <button id="startButton">Start Game</button>
+
+    </div>
+
+    <div id="gameOverScreen" class="screen" style="display: none;">
+
+      <h1>Game Over</h1>
+
+      <p>Your Score: <span id="finalScore"></span></p>
+
+      <p>High Score: <span id="highScore"></span></p>
+
+      <button id="restartButton">Play Again</button>
+
+    </div>
+
+    <div id="scoreBoard">
+
+      Score: <span id="currentScore">0</span><br>
+
+      High Score: <span id="currentHighScore">0</span>
+
+    </div>
+
+  </div>
+
+
+<script>
+
+const canvas = document.getElementById('game');
+
+const context = canvas.getContext('2d');
+
+
+const grid = 48;
+
+const gridGap = 10;
+
+
+let score = 0;
+
+let highScore = 0;
+
+let lives = 3;
+
+let gameState = 'start';
+
+
+function Sprite(props) {
+
+  Object.assign(this, props);
+
+}
+
+
+Sprite.prototype.render = function() {
+
+  context.fillStyle = this.color;
+
+
+  if (this.shape === 'rect') {
+
+    context.fillRect(this.x, this.y + gridGap / 2, this.size, grid - gridGap);
+
+  } else {
+
+    context.beginPath();
+
+    context.arc(
+
+      this.x + this.size / 2, this.y + this.size / 2,
+
+      this.size / 2 - gridGap / 2, 0, 2 * Math.PI
+
+    );
+
+    context.fill();
+
+  }
+
+}
+
+
+const frogger = new Sprite({
+
+  x: grid * 6,
+
+  y: grid * 13,
+
+  color: 'greenyellow',
+
+  size: grid,
+
+  shape: 'circle',
+
+  active: true
+
+});
+
+
+const scoredFroggers = [];
+
+
+const patterns = [
+
+  null,
+
+  {
+
+    spacing: [2],
+
+    color: '#c55843',
+
+    size: grid * 4,
+
+    shape: 'rect',
+
+    speed: 0.75
+
+  },
+
+  {
+
+    spacing: [0,2,0,2,0,2,0,4],
+
+    color: '#de0004',
+
+    size: grid,
+
+    shape: 'circle',
+
+    speed: -1
+
+  },
+
+  {
+
+    spacing: [2],
+
+    color: '#c55843',
+
+    size: grid * 7,
+
+    shape: 'rect',
+
+    speed: 1.5
+
+  },
+
+  {
+
+    spacing: [3],
+
+    color: '#c55843',
+
+    size: grid * 3,
+
+    shape: 'rect',
+
+    speed: 0.5
+
+  },
+
+  {
+
+    spacing: [0,0,1],
+
+    color: '#de0004',
+
+    size: grid,
+
+    shape: 'circle',
+
+    speed: -1
+
+  },
+
+  null,
+
+  {
+
+    spacing: [3,8],
+
+    color: '#c2c4da',
+
+    size: grid * 2,
+
+    shape: 'rect',
+
+    speed: -1
+
+  },
+
+  {
+
+    spacing: [14],
+
+    color: '#c2c4da',
+
+    size: grid,
+
+    shape: 'rect',
+
+    speed: 0.75
+
+  },
+
+  {
+
+    spacing: [3,3,7],
+
+    color: '#de3cdd',
+
+    size: grid,
+
+    shape: 'rect',
+
+    speed: -0.75
+
+  },
+
+  {
+
+    spacing: [3,3,7],
+
+    color: '#0bcb00',
+
+    size: grid,
+
+    shape: 'rect',
+
+    speed: 0.5
+
+  },
+
+  {
+
+    spacing: [4],
+
+    color: '#e5e401',
+
+    size: grid,
+
+    shape: 'rect',
+
+    speed: -0.5
+
+  },
+
+  null
+
+];
+
+
+const rows = [];
+
+for (let i = 0; i < patterns.length; i++) {
+
+  rows[i] = [];
+
+
+  let x = 0;
+
+  let index = 0;
+
+  const pattern = patterns[i];
+
+
+  if (!pattern) {
+
+    continue;
+
+  }
+
+
+  let totalPatternWidth =
+
+    pattern.spacing.reduce((acc, space) => acc + space, 0) * grid +
+
+    pattern.spacing.length * pattern.size;
+
+  let endX = 0;
+
+  while (endX < canvas.width) {
+
+    endX += totalPatternWidth;
+
+  }
+
+  endX += totalPatternWidth;
+
+
+  while (x < endX) {
+
+    rows[i].push(new Sprite({
+
+      x,
+
+      y: grid * (i + 1),
+
+      index,
+
+      ...pattern
+
+    }));
+
+
+    const spacing = pattern.spacing;
+
+    x += pattern.size + spacing[index] * grid;
+
+    index = (index + 1) % spacing.length;
+
+  }
+
+}
+
+
+function drawBackground() {
+
+  context.fillStyle = '#000047';
+
+  context.fillRect(0, grid, canvas.width, grid * 6);
+
+
+  context.fillStyle = '#1ac300';
+
+  context.fillRect(0, grid, canvas.width, 5);
+
+  context.fillRect(0, grid, 5, grid);
+
+  context.fillRect(canvas.width - 5, grid, 5, grid);
+
+  for (let i = 0; i < 4; i++) {
+
+    context.fillRect(grid + grid * 3 * i, grid, grid * 2, grid);
+
+  }
+
+
+  context.fillStyle = '#8500da';
+
+  context.fillRect(0, 7 * grid, canvas.width, grid);
+
+
+  context.fillRect(0, canvas.height - grid * 2, canvas.width, grid);
+
+}
+
+
+function updateScore() {
+
+  document.getElementById('currentScore').textContent = score;
+
+  document.getElementById('currentHighScore').textContent = highScore;
+
+}
+
+
+function resetGame() {
+
+  score = 0;
+
+  lives = 3;
+
+  scoredFroggers.length = 0;
+
+  frogger.x = grid * 6;
+
+  frogger.y = grid * 13;
+
+  frogger.active = true;
+
+  updateScore();
+
+}
+
+
+function gameOver() {
+
+  gameState = 'over';
+
+  document.getElementById('gameOverScreen').style.display = 'flex';
+
+  document.getElementById('finalScore').textContent = score;
+
+  document.getElementById('highScore').textContent = highScore;
+
+}
+
+
+function respawnFrogger() {
+
+  frogger.active = true;
+
+  frogger.x = grid * 6;
+
+  frogger.y = grid * 13;
+
+  frogger.speed = 0;
+
+}
+
+
+function loop() {
+
+  requestAnimationFrame(loop);
+
+
+  if (gameState !== 'playing') return;
+
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawBackground();
+
+
+  for (let r = 0; r < rows.length; r++) {
+
+    const row = rows[r];
+
+
+    for (let i = 0; i < row.length; i++) {
+
+      const sprite = row[i]
+
+      sprite.x += sprite.speed;
+
+      sprite.render();
+
+
+      if (sprite.speed < 0 && sprite.x < 0 - sprite.size) {
+
+        let rightMostSprite = sprite;
+
+        for (let j = 0; j < row.length; j++) {
+
+          if (row[j].x > rightMostSprite.x) {
+
+            rightMostSprite = row[j];
+
+          }
+
+        }
+
+
+        const spacing = patterns[r].spacing;
+
+        sprite.x =
+
+          rightMostSprite.x + rightMostSprite.size +
+
+          spacing[rightMostSprite.index] * grid;
+
+        sprite.index = (rightMostSprite.index + 1) % spacing.length;
+
+      }
+
+
+      if (sprite.speed > 0 && sprite.x > canvas.width) {
+
+        let leftMostSprite = sprite;
+
+        for (let j = 0; j < row.length; j++) {
+
+          if (row[j].x < leftMostSprite.x) {
+
+            leftMostSprite = row[j];
+
+          }
+
+        }
+
+
+        const spacing = patterns[r].spacing;
+
+        let index = leftMostSprite.index - 1;
+
+        index = index >= 0 ? index : spacing.length - 1;
+
+        sprite.x = leftMostSprite.x - spacing[index] * grid - sprite.size;
+
+        sprite.index = index;
+
+      }
+
+    }
+
+  }
+
+
+  if (frogger.active) {
+
+    frogger.x += frogger.speed || 0;
+
+    frogger.render();
+
+  }
+
+
+  scoredFroggers.forEach(frog => frog.render());
+
+
+  const froggerRow = frogger.y / grid - 1 | 0;
+
+  let collision = false;
+
+  for (let i = 0; i < rows[froggerRow].length; i++) {
+
+    let sprite = rows[froggerRow][i];
+
+
+    if (frogger.active && frogger.x < sprite.x + sprite.size - gridGap &&
+
+        frogger.x + grid - gridGap > sprite.x &&
+
+        frogger.y < sprite.y + grid &&
+
+        frogger.y + grid > sprite.y) {
+
+      collision = true;
+
+
+      if (froggerRow > rows.length / 2) {
+
+        lives--;
+
+        if (lives <= 0) {
+
+          gameOver();
+
+          return;
+
+        }
+
+        respawnFrogger();
+
+      } else {
+
+        frogger.speed = sprite.speed;
+
+      }
+
+    }
+
+  }
+
+
+  if (frogger.active && !collision) {
+
+    frogger.speed = 0;
+
+
+    const col = (frogger.x + grid / 2) / grid | 0;
+
+    if (froggerRow === 0 && col % 3 === 0) {
+
+      score += 50;
+
+      if (score > highScore) {
+
+        highScore = score;
+
+      }
+
+      updateScore();
+
+
+      frogger.active = false;
+
+      setTimeout(respawnFrogger, 500);
+
+    }
+
+
+    if (froggerRow < rows.length / 2 - 1 && froggerRow !== 0) {
+
+      lives--;
+
+      if (lives <= 0) {
+
+        gameOver();
+
+        return;
+
+      }
+
+      respawnFrogger();
+
+    }
+
+  }
+
+
+  // Draw lives
+
+  context.fillStyle = 'greenyellow';
+
+  for (let i = 0; i < lives; i++) {
+
+    context.beginPath();
+
+    context.arc(canvas.width - 30 - i * 25, 30, 10, 0, 2 * Math.PI);
+
+    context.fill();
+
+  }
+
+}
+
+
+document.addEventListener('keydown', function(e) {
+
+  if (gameState !== 'playing' || !frogger.active) return;
+
+
+  if (e.which === 37) {
+
+    frogger.x -= grid;
+
+  } else if (e.which === 39) {
+
+    frogger.x += grid;
+
+  } else if (e.which === 38) {
+
+    frogger.y -= grid;
+
+  } else if (e.which === 40) {
+
+    frogger.y += grid;
+
+  }
+
+
+  frogger.x = Math.min(Math.max(0, frogger.x), canvas.width - grid);
+
+  frogger.y = Math.min(Math.max(grid, frogger.y), canvas.height - grid * 2);
+
+});
+
+
+document.getElementById('startButton').addEventListener('click', function() {
+
+  gameState = 'playing';
+
+  document.getElementById('startScreen').style.display = 'none';
+
+  resetGame();
+
+});
+
+
+document.getElementById('restartButton').addEventListener('click', function() {
+
+  gameState = 'playing';
+
+  document.getElementById('gameOverScreen').style.display = 'none';
+
+  resetGame();
+
+});
+
+
+requestAnimationFrame(loop);
+
+</script>
+
+</body>
+
+</html>

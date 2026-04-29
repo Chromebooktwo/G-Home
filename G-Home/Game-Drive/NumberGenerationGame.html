@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Generation Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .game-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            padding: 8px;
+            width: 100%;
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            font-size: 18px;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Number Generation Game</h1>
+        
+        <label for="min-value">Min Value:</label>
+        <input type="number" id="min-value" value="0" />
+        
+        <label for="max-value">Max Value:</label>
+        <input type="number" id="max-value" value="100" />
+        
+        <button onclick="generateNumber()">Generate</button>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function generateNumber() {
+            // Get the min and max values
+            const minValue = parseInt(document.getElementById('min-value').value);
+            const maxValue = parseInt(document.getElementById('max-value').value);
+
+            // Validate the input
+            if (minValue >= maxValue) {
+                document.getElementById('result').textContent = 'Min value must be less than max value!';
+                return;
+            }
+
+            // Generate a random number between min and max
+            const randomNumber = Math.floor(Math.random() * (maxValue - minValue + 1)) + minValue;
+
+            // Display the result
+            document.getElementById('result').textContent = 'Generated Number: ' + randomNumber;
+        }
+    </script>
+
+</body>
+</html>

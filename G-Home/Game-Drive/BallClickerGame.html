@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Clicker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .settings {
+            margin-bottom: 20px;
+        }
+
+        .ball-area {
+            width: 100%;
+            height: 400px;
+            background-color: #e0e0e0;
+            position: relative;
+            overflow: hidden;
+            margin-top: 20px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+
+        .ball {
+            position: absolute;
+            border-radius: 50%;
+            background-color: #3498db;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #ballsLeft {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+
+        .stats-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2980b9;
+        }
+
+        .stats-details {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        input[type="number"], button {
+            padding: 8px 12px;
+            font-size: 16px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Ball Clicker Game</h1>
+        <div class="settings">
+            <label for="ballCount">Number of Balls:</label>
+            <input type="number" id="ballCount" min="2" value="5">
+            <br>
+            <label for="ballSize">Ball Size (px):</label>
+            <input type="number" id="ballSize" min="2" value="30">
+            <br>
+            <button id="startBtn">Start Game</button>
+        </div>
+
+        <div id="ballsLeft">Balls Left: <span id="ballsRemaining">5</span></div>
+        <div id="ballArea" class="ball-area"></div>
+
+        <div class="stats" id="statsArea">
+            <div class="stats-value">
+                Average time between clicks: <span id="avgTimeValue">0.0 seconds (0 ms)</span>
+            </div>
+            <div class="stats-details">
+                Fastest click: <span id="fastestClick">0.0 seconds (0 ms)</span><br>
+                Slowest click: <span id="slowestClick">0.0 seconds (0 ms)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ballsClicked = 0;
+        let ballCount;
+        let ballSize;
+        let startTime;
+        let gameOver = false;
+        let clickTimestamps = [];
+
+        function startGame() {
+            const tempBallCount = parseInt(document.getElementById('ballCount').value);
+            const tempBallSize = parseInt(document.getElementById('ballSize').value);
+
+            // Check if ball count or ball size are 1 or lower
+            if (tempBallCount <= 1 || tempBallSize <= 1) {
+                alert('Ball count and ball size must be greater than 1.');
+                return; // Prevent the game from starting
+            }
+
+            document.getElementById('statsArea').style.display = 'none';
+            
+            ballCount = tempBallCount;
+            ballSize = tempBallSize;
+            
+            document.getElementById('ballsRemaining').textContent = ballCount;
+            
+            gameOver = false;
+            clickTimestamps = [];
+            ballsClicked = 0;
+            startTime = performance.now();
+            
+            spawnBall();
+        }
+
+        function formatTime(ms) {
+            const seconds = (ms / 1000).toFixed(1);
+            return `${seconds} seconds (${Math.round(ms)} ms)`;
+        }
+
+        function calculateStats() {
+            const timeDiffs = [];
+            for (let i = 1; i < clickTimestamps.length; i++) {
+                timeDiffs.push(clickTimestamps[i] - clickTimestamps[i-1]);
+            }
+
+            if (timeDiffs.length === 0) return;
+
+            const avgTimeMs = timeDiffs.reduce((a, b) => a + b) / timeDiffs.length;
+            const fastestTimeMs = Math.min(...timeDiffs);
+            const slowestTimeMs = Math.max(...timeDiffs);
+
+            document.getElementById('avgTimeValue').textContent = formatTime(avgTimeMs);
+            document.getElementById('fastestClick').textContent = formatTime(fastestTimeMs);
+            document.getElementById('slowestClick').textContent = formatTime(slowestTimeMs);
+            
+            document.getElementById('statsArea').style.display = 'block';
+        }
+
+        function spawnBall() {
+            if (gameOver || ballCount <= 0) {
+                return;
+            }
+
+            const ballArea = document.getElementById('ballArea');
+            ballArea.innerHTML = '';
+
+            const ball = document.createElement('div');
+            ball.classList.add('ball');
+            ball.style.width = `${ballSize}px`;
+            ball.style.height = `${ballSize}px`;
+            ball.style.left = `${Math.random() * (ballArea.offsetWidth - ballSize)}px`;
+            ball.style.top = `${Math.random() * (ballArea.offsetHeight - ballSize)}px`;
+
+            ball.addEventListener('click', () => {
+                if (gameOver) return;
+
+                ballsClicked++;
+                ballCount--;
+                document.getElementById('ballsRemaining').textContent = ballCount;
+                
+                clickTimestamps.push(performance.now());
+
+                if (ballCount <= 0) {
+                    endGame();
+                    return;
+                }
+
+                ball.style.left = `${Math.random() * (ballArea.offsetWidth - ballSize)}px`;
+                ball.style.top = `${Math.random() * (ballArea.offsetHeight - ballSize)}px`;
+            });
+
+            ballArea.appendChild(ball);
+        }
+
+        function endGame() {
+            gameOver = true;
+            const ballArea = document.getElementById('ballArea');
+            ballArea.innerHTML = '';
+            calculateStats();
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+    </script>
+
+</body>
+</html>

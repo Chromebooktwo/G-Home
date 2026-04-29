@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>BallShooter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1;
+        }
+
+        body {
+            color: #333333;
+            overflow: hidden;
+            background: #111111;
+        }
+
+        #score {
+            position: fixed;
+            color: white;
+            font-size: 13px;
+            padding: 5px;
+            user-select: none;
+            z-index: 99;
+        }
+
+        #score p {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        button:focus {
+            outline: none;
+        }
+
+        #modelEl {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            padding: 1em;
+            text-align: center;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        #modelEl > div {
+            width: 100%;
+            max-width: 350px;
+            padding: 1.5em;
+            background: white;
+        }
+
+        #modelEl h1 {
+            font-size: 3em;
+            font-weight: 600;
+        }
+
+        #modelEl p {
+            font-size: 14px;
+        }
+
+        #modelEl button {
+            width: 100%;
+            margin-top: 1.5em;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 2em;
+            padding: 1em 2em;
+            background: dodgerblue;
+            transition: all 0.3s ease;
+        }
+
+        #modelEl button:hover {
+            opacity: 0.8;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">
+        <p>Score: <span class="ml-1" id="scoreEl">0</span></p>
+        <p>Highest: <span class="ml-1" id="highestEl">0</span></p>
+    </div>
+
+    <div id="modelEl">
+        <div>
+            <h1 id="bigScoreEl">0</h1>
+            <p>Points</p>
+            <div>
+                <button id="startGameBtn">Start Game</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas></canvas>
+
+    <script>
+        // Selecting Canvas
+        const canvas = document.querySelector('canvas');
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+            stopGame();
+        });
+
+        // Variables & Constants
+        const c = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreEl');
+        const highestEl = document.getElementById('highestEl');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const modelEl = document.getElementById('modelEl');
+        const bigScoreEl = document.getElementById('bigScoreEl');
+        const friction = 0.98;
+        let x = canvas.width / 2;
+        let y = canvas.height / 2;
+        let projectiles = [];
+        let enemies = [];
+        let particles = [];
+        let score = 0;
+        let highest = localStorage.getItem('highest') || 0;
+        let animationId;
+        let spanEnemiesInterval;
+        let spawnTime = 1000;
+        highestEl.innerHTML = highest;
+
+        // Ball Class
+        class Ball {
+            constructor(x, y, radius, color) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+            }
+
+            draw() {
+                c.beginPath();
+                c.arc(this.x, this.y, this.radius, Math.PI * 2, 0, false);
+                c.fillStyle = this.color;
+                c.fill();
+            }
+        }
+
+        // Shooter Ball
+        class Shooter extends Ball {
+            constructor(x, y, radius, color, velocity) {
+                super(x, y, radius, color);
+                this.velocity = velocity;
+            }
+
+            update() {
+                this.draw();
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+            }
+        }
+
+        // Particle Class
+        class Particle extends Shooter {
+            constructor(x, y, radius, color, velocity) {
+                super(x, y, radius, color, velocity);
+                this.alpha = 1;
+            }
+
+            draw() {
+                c.save();
+                c.globalAlpha = this.alpha;
+                c.beginPath();
+                c.arc(this.x, this.y, this.radius, Math.PI * 2, 0, false);
+                c.fillStyle = this.color;
+                c.fill();
+                c.restore();
+            }
+
+            update() {
+                this.draw();
+                this.velocity.x *= friction;
+                this.velocity.y *= friction;
+                this.x += this.velocity.x * 2;
+                this.y += this.velocity.y * 2;
+                this.alpha -= 0.01;
+            }
+        }
+
+        function updateScore(times = 1) {
+            spawnTime *= 0.9995;
+            score += 100 * times;
+            scoreEl.innerHTML = score;
+
+            // Check and update the highest score in real-time
+            if (score > highest) {
+                highest = score;
+                highestEl.innerHTML = highest; // Update highest score display
+            }
+        }
+
+        function calculateVelocity(x, y, x1 = canvas.width / 2, y1 = canvas.height / 2) {
+            const angle = Math.atan2(y1 - y, x1 - x);
+            return {
+                x: Math.cos(angle),
+                y: Math.sin(angle),
+            };
+        }
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            c.fillStyle = 'rgba(0,0,0,0.1)';
+            c.fillRect(0, 0, canvas.width, canvas.height);
+            player.draw();
+
+            // Update and remove particles
+            particles.forEach((particle, index) => {
+                if (particle.alpha <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    particle.update();
+                }
+            });
+
+            // Update and remove projectiles
+            projectiles.forEach((projectile, index) => {
+                projectile.update();
+                if (projectile.x + projectile.radius < 1 ||
+                    projectile.x - projectile.radius > canvas.width ||
+                    projectile.y + projectile.radius < 0 ||
+                    projectile.y - projectile.radius > canvas.height) {
+                    projectiles.splice(index, 1);
+                }
+            });
+
+            // Update enemies
+            enemies.forEach((enemy, index) => {
+                enemy.update();
+
+                const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+                if (dist - enemy.radius - player.radius < 1) {
+                    stopGame();
+                }
+
+                projectiles.forEach((projectile, projectileIndex) => {
+                    const dist = Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y);
+                    if (dist - enemy.radius - projectile.radius < 0) {
+                        for (let i = 0; i < enemy.radius * 1; i++) {
+                            particles.push(new Particle(
+                                projectile.x,
+                                projectile.y,
+                                Math.random() * 3,
+                                enemy.color,
+                                {
+                                    x: (Math.random() - 0.5) * (Math.random() * 9.8 - 0.5),
+                                    y: (Math.random() - 0.5) * (Math.random() * 9.8 - 0.5),
+                                }
+                            ));
+                        }
+
+                        if (enemy.radius - 10 > 10) {
+                            updateScore();
+                            enemy.radius -= 8;
+                            projectiles.splice(projectileIndex, 1);
+                        } else {
+                            updateScore(2.5);
+                            enemies.splice(index, 1);
+                            projectiles.splice(projectileIndex, 1);
+                        }
+                    }
+                });
+            });
+        }
+
+        function shootEnemy(e) {
+            let x = canvas.width / 2;
+            let y = canvas.height / 2;
+
+            const v = calculateVelocity(x, y, e.clientX, e.clientY);
+            v.x *= 5.5;
+            v.y *= 5.5;
+
+            projectiles.push(new Shooter(x, y, 5, 'white', v));
+        }
+
+        function init() {
+            player = new Ball(x, y, 10, 'white');
+            projectiles = [];
+            enemies = [];
+            particles = [];
+            score = 0;
+            spawnTime = 1000;
+            scoreEl.innerHTML = score;
+            highestEl.innerHTML = highest; // Display highest score on reset
+        }
+
+        function stopGame() {
+            clearInterval(spanEnemiesInterval);
+            cancelAnimationFrame(animationId);
+            canvas.removeEventListener('click', shootEnemy);
+            modelEl.style.display = 'flex';
+            bigScoreEl.innerHTML = score;
+            // Store highest score if it beats previous score
+            if (score > highest) {
+                highest = score;
+                localStorage.setItem('highest', highest); // Save the new highest score
+            }
+        }
+
+        function spanEnemies() {
+            spanEnemiesInterval = setTimeout(() => {
+                let x, y;
+                const radius = Math.random() * 16 + 14;
+                if (Math.random() < 0.5) {
+                    x = Math.random() < 0.5 ? 0 - radius : canvas.width + radius;
+                    y = Math.random() * canvas.height;
+                } else {
+                    x = Math.random() * canvas.width;
+                    y = Math.random() < 0.5 ? 0 - radius : canvas.height + radius;
+                }
+                const color = `hsl(${Math.floor(Math.random() * 360)}, 50%, 50%)`;
+                enemies.push(new Shooter(x, y, radius, color, calculateVelocity(x, y)));
+                spanEnemies();
+            }, spawnTime);
+        }
+
+        function startGame() {
+            x = canvas.width / 2;
+            y = canvas.height / 2;
+            canvas.addEventListener('click', shootEnemy);
+            init();
+            animate();
+            clearInterval(spanEnemiesInterval);
+            spanEnemies();
+            modelEl.style.display = 'none';
+        }
+
+        startGameBtn.addEventListener('click', startGame);
+    </script>
+</body>
+</html>

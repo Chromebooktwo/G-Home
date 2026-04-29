@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100" rel="stylesheet">
+    <style>
+        body {
+            background: #c1d72e;
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            color: #fff;
+            height: 100%;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .wrapper {
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .wrapper:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        canvas {
+            color: #fff;
+            border: #fff dashed 2px;
+            padding: 15px;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 100;
+            text-transform: uppercase;
+            margin: 5px 0;
+        }
+
+        h1 {
+            font-size: 2.6em;
+        }
+
+        h2 {
+            font-size: 1.6em;
+        }
+
+        p {
+            font-size: 1.6em;
+        }
+
+        #answer {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 1.6em;
+            margin-top: 10px;
+            display: none;
+        }
+
+        #alphabet {
+            margin: 15px auto;
+            padding: 0;
+            max-width: 900px;
+        }
+
+        #alphabet:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        #alphabet li {
+            float: left;
+            margin: 0 10px 10px 0;
+            list-style: none;
+            width: 35px;
+            height: 30px;
+            padding-top: 10px;
+            background: #fff;
+            color: #c1d72e;
+            cursor: pointer;
+            border-radius: 5px;
+            border: solid 1px #fff;
+            transition: all 0.3s ease-in-out;
+        }
+
+        #alphabet li:hover {
+            background: #c1d72e;
+            border: solid 1px #fff;
+            color: #fff;
+        }
+
+        #my-word {
+            margin: 0;
+            display: block;
+            padding: 0;
+        }
+
+        #my-word li {
+            position: relative;
+            list-style: none;
+            margin: 0;
+            display: inline-block;
+            padding: 0 10px;
+            font-size: 1.6em;
+        }
+
+        .active {
+            opacity: 0.4;
+            filter: alpha(opacity=40);
+            transition: all 1s ease-in;
+            cursor: default;
+        }
+
+        .active:hover {
+            opacity: 0.4;
+            filter: alpha(opacity=40);
+        }
+
+        #mylives {
+            font-size: 1.6em;
+            text-align: center;
+            display: block;
+        }
+
+        button {
+            border-radius: 5px;
+            background: #c1d72e;
+            color: #fff;
+            border: solid 1px #fff;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 18px 10px;
+            width: 180px;
+            margin: 10px;
+            outline: none;
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: #fff;
+            border: solid 1px #fff;
+            color: #c1d72e;
+        }
+
+        @media (max-width: 767px) {
+            #alphabet {
+                padding: 0 0 0 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #alphabet {
+                padding: 0 0 0 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>Hangman</h1>
+        <h2>Just A Basic Hangman Game</h2>
+        <p>Use the alphabet below to guess the word, or click hint to get a clue.</p>
+    </div>
+    <div class="wrapper">
+        <div id="buttons"></div>
+        <p id="catagoryName"></p>
+        <div id="hold"></div>
+        <p id="mylives"></p>
+        <p id="answer"></p>
+        <p id="clue">Clue -</p>
+        <canvas id="stickman" width="200" height="200">This Text will show if the Browser does NOT support HTML5 Canvas tag</canvas>
+        <div class="container">
+            <button id="hint">Hint</button>
+            <button id="reset">Play again</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+                'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+                't', 'u', 'v', 'w', 'x', 'y', 'z'];
+
+            var categories;         // Array of topics
+            var chosenCategory;     // Selected category
+            var word;               // Selected word
+            var guess;              // Guess
+            var geusses = [];       // Stored guesses
+            var lives;              // Lives
+            var counter;            // Count correct guesses
+            var space;              // Number of spaces in word '-'
+
+            // Get elements
+            var showLives = document.getElementById("mylives");
+            var showCategory = document.getElementById("scatagory");
+            var getHint = document.getElementById("hint");
+            var showClue = document.getElementById("clue");
+            var showAnswer = document.getElementById("answer");
+
+            // create alphabet ul
+            var buttons = function () {
+                myButtons = document.getElementById('buttons');
+                letters = document.createElement('ul');
+
+                for (var i = 0; i < alphabet.length; i++) {
+                    letters.id = 'alphabet';
+                    list = document.createElement('li');
+                    list.id = 'letter';
+                    list.innerHTML = alphabet[i];
+                    check();
+                    myButtons.appendChild(letters);
+                    letters.appendChild(list);
+                }
+            }
+
+            // Select Category
+            var selectCat = function () {
+                if (chosenCategory === categories[0]) {
+                    catagoryName.innerHTML = "The Chosen Category Is Animals";
+                } else if (chosenCategory === categories[1]) {
+                    catagoryName.innerHTML = "The Chosen Category Is Fruits";
+                } else if (chosenCategory === categories[2]) {
+                    catagoryName.innerHTML = "The Chosen Category Is Cities";
+                }
+            }
+
+            // Create guesses ul
+            result = function () {
+                wordHolder = document.getElementById('hold');
+                correct = document.createElement('ul');
+
+                for (var i = 0; i < word.length; i++) {
+                    correct.setAttribute('id', 'my-word');
+                    guess = document.createElement('li');
+                    guess.setAttribute('class', 'guess');
+                    if (word[i] === "-") {
+                        guess.innerHTML = "-";
+                        space = 1;
+                    } else {
+                        guess.innerHTML = "_";
+                    }
+
+                    geusses.push(guess);
+                    wordHolder.appendChild(correct);
+                    correct.appendChild(guess);
+                }
+            }
+
+            // Show lives
+            comments = function () {
+                showLives.innerHTML = "You have " + lives + " lives";
+                if (lives < 1) {
+                    showLives.innerHTML = "Game Over";
+                    showAnswer.style.display = "block";
+                    showAnswer.innerHTML = "The word was: " + word;
+                } else {
+                    showAnswer.style.display = "none";
+                }
+                for (var i = 0; i < geusses.length; i++) {
+                    if (counter + space === geusses.length) {
+                        showLives.innerHTML = "You Win!";
+                        showAnswer.style.display = "none";
+                    }
+                }
+            }
+
+            // Animate man
+            var animate = function () {
+                var drawMe = lives;
+                drawArray[drawMe]();
+            }
+
+            // Hangman
+            canvas = function () {
+                myStickman = document.getElementById("stickman");
+                context = myStickman.getContext('2d');
+                context.beginPath();
+                context.strokeStyle = "#fff";
+                context.lineWidth = 2;
+            };
+
+            head = function () {
+                myStickman = document.getElementById("stickman");
+                context = myStickman.getContext('2d');
+                context.beginPath();
+                context.arc(60, 25, 10, 0, Math.PI * 2, true);
+                context.stroke();
+            }
+
+            draw = function ($pathFromx, $pathFromy, $pathTox, $pathToy) {
+                context.moveTo($pathFromx, $pathFromy);
+                context.lineTo($pathTox, $pathToy);
+                context.stroke();
+            }
+
+            frame1 = function () {
+                draw(0, 150, 150, 150);
+            };
+
+            frame2 = function () {
+                draw(10, 0, 10, 600);
+            };
+
+            frame3 = function () {
+                draw(0, 5, 70, 5);
+            };
+
+            frame4 = function () {
+                draw(60, 5, 60, 15);
+            };
+
+            torso = function () {
+                draw(60, 36, 60, 70);
+            };
+
+            rightArm = function () {
+                draw(60, 46, 100, 50);
+            };
+
+            leftArm = function () {
+                draw(60, 46, 20, 50);
+            };
+
+            rightLeg = function () {
+                draw(60, 70, 100, 100);
+            };
+
+            leftLeg = function () {
+                draw(60, 70, 20, 100);
+            };
+
+            drawArray = [rightLeg, leftLeg, rightArm, leftArm, torso, head, frame4, frame3, frame2, frame1];
+
+            // OnClick Function
+            check = function () {
+                list.onclick = function () {
+                    var geuss = (this.innerHTML);
+                    this.setAttribute("class", "active");
+                    this.onclick = null;
+                    for (var i = 0; i < word.length; i++) {
+                        if (word[i] === geuss) {
+                            geusses[i].innerHTML = geuss;
+                            counter += 1;
+                        }
+                    }
+                    var j = (word.indexOf(geuss));
+                    if (j === -1) {
+                        lives -= 1;
+                        comments();
+                        animate();
+                    } else {
+                        comments();
+                    }
+                }
+            }
+
+            // Play
+            play = function () {
+                categories = [
+                    ["dog", "cat", "elephant", "tiger", "giraffe", "whale"],
+                    ["apple", "banana", "orange", "grape", "kiwi", "pineapple"],
+                    ["paris", "london", "new-york", "berlin", "tokyo", "sydney", "milan"]
+                ];
+
+                hints = [
+                    ["Man's best friend", "A small domesticated animal", "Large African mammal", "Large feline", "Tallest land animal", "Large aquatic mammal"],
+                    ["Popular fruit", "Yellow tropical fruit", "Citrus fruit", "Purple fruit", "Tropical fruit with rough skin", "Tropical fruit with spiky leaves"],
+                    ["Capital of France", "Capital of the UK", "Famous US city", "Capital of Germany", "Capital of Japan", "Capital of Australia", "A famous city, also my name"]
+                ];
+
+                chosenCategory = categories[Math.floor(Math.random() * categories.length)];
+                word = chosenCategory[Math.floor(Math.random() * chosenCategory.length)];
+                word = word.replace(/\s/g, "-");
+                console.log(word);
+                buttons();
+
+                geusses = [];
+                lives = 10;
+                counter = 0;
+                space = 0;
+                result();
+                comments();
+                selectCat();
+                canvas();
+            }
+
+            play();
+
+            // Hint
+            hint.onclick = function () {
+                var categoryIndex = categories.indexOf(chosenCategory);
+                var hintIndex = chosenCategory.indexOf(word);
+                showClue.innerHTML = "Clue: - " + hints[categoryIndex][hintIndex];
+            };
+
+            // Reset
+            document.getElementById('reset').onclick = function () {
+                correct.parentNode.removeChild(correct);
+                letters.parentNode.removeChild(letters);
+                showClue.innerHTML = "";
+                showAnswer.style.display = "none";
+                context.clearRect(0, 0, 400, 400);
+                play();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Missile Defence Game</title>
+  <meta charset="UTF-8">
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+  }
+
+  canvas {
+    cursor: crosshair;
+    border: 1px solid white;
+  }
+
+  #gameInfo {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 20px;
+    text-align: center;
+  }
+  </style>
+</head>
+<body>
+<div id="gameInfo">
+  Level: <span id="levelDisplay">1</span> | 
+  Score: <span id="scoreDisplay">0</span>
+</div>
+<canvas width="800" height="550" id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const context = canvas.getContext('2d');
+const groundY = 500;
+const cityWidth = 45;
+const cityHeight = 25;
+const cityY = groundY - cityHeight;
+const siloY = groundY - 30;
+const missileSize = 4;
+
+let missileSpeed = 1;
+const counterMissileSpeed = 15;
+
+let missiles = [];
+let counterMissiles = [];
+let explosions = [];
+
+// Dynamic level generation
+function generateLevelConfig(level) {
+  return {
+    missilesPerWave: Math.min(4 + Math.floor(level / 2), 15), // Increase missiles per wave, max 15
+    numberOfWaves: Math.min(4 + Math.floor(level / 3), 10),   // Increase waves, max 10
+    missileSpeed: Math.min(1 + (level * 0.2), 3),            // Increase speed, max 3x
+    baseScore: 25 + (level * 10),                            // Increase points per missile
+    cityBonus: 100 + (level * 50),                          // Increase city survival bonus
+    missileBonus: 10 + (level * 5)                          // Increase unused missile bonus
+  };
+}
+
+let currLevel = 0;
+let currInterval = 0;
+let score = 0;
+let levelConfig = generateLevelConfig(currLevel);
+
+const siloPos = [55, canvas.width / 2, 745];
+
+function initializeCitiesAndSilos() {
+  return {
+    cities: [
+      { x: 140, y: cityY, alive: true },
+      { x: 220, y: cityY, alive: true },
+      { x: 300, y: cityY, alive: true },
+      { x: 500, y: cityY, alive: true },
+      { x: 580, y: cityY, alive: true },
+      { x: 660, y: cityY, alive: true }
+    ],
+    silos: [
+      { x: siloPos[0], y: siloY, missiles: 10, alive: true },
+      { x: siloPos[1], y: siloY, missiles: 10, alive: true },
+      { x: siloPos[2], y: siloY, missiles: 10, alive: true }
+    ]
+  };
+}
+
+let { cities, silos } = initializeCitiesAndSilos();
+
+const missileSpawns = cities
+  .concat(silos)
+  .concat([{ x: 0, y: 0 }, { x: canvas.width, y: 0 }])
+  .map(pos => ({ x: pos.x, y: 0 }));
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function angleBetweenPoints(source, target) {
+  return Math.atan2(target.y - source.y, target.x - source.x) + Math.PI / 2;
+}
+
+function distance(source, target) {
+  return Math.hypot(source.x - target.x, source.y - target.y);
+}
+
+function updateScore(points) {
+  score += points;
+  document.getElementById('scoreDisplay').textContent = score;
+}
+
+function checkLevelComplete() {
+  if (missiles.length === 0 && currInterval >= levelConfig.numberOfWaves) {
+    // Calculate end of level bonus
+    const citiesBonus = cities.filter(city => city.alive).length * levelConfig.cityBonus;
+    const silosBonus = silos.reduce((total, silo) => total + silo.missiles * levelConfig.missileBonus, 0);
+    
+    updateScore(citiesBonus + silosBonus);
+    
+    // Advance to next level
+    currLevel++;
+    currInterval = 0;
+    levelConfig = generateLevelConfig(currLevel);
+    
+    // Update level display
+    document.getElementById('levelDisplay').textContent = currLevel + 1;
+    
+    // Reset missile speed for new level
+    missileSpeed = levelConfig.missileSpeed;
+    
+    // Reset cities and silos
+    const newState = initializeCitiesAndSilos();
+    cities = newState.cities;
+    silos = newState.silos;
+    
+    lastTime = performance.now();  // Reset spawn timer
+  }
+}
+
+function spawnMissile() {
+  const targets = cities.concat(silos);
+  if (targets.length === 0) return;  // No targets left
+
+  const randSpawn = randInt(0, missileSpawns.length - 1);
+  const randTarget = randInt(0, targets.length - 1);
+  const start = missileSpawns[randSpawn];
+  const target = targets[randTarget];
+  const angle = angleBetweenPoints(start, target);
+
+  missiles.push({
+    start,
+    target,
+    pos: { x: start.x, y: start.y },
+    alive: true,
+    dx: missileSpeed * Math.sin(angle),
+    dy: missileSpeed * -Math.cos(angle)
+  });
+}
+
+function resetGame() {
+  currLevel = 0;
+  currInterval = 0;
+  score = 0;
+  levelConfig = generateLevelConfig(currLevel);
+  missileSpeed = levelConfig.missileSpeed;
+  missiles = [];
+  counterMissiles = [];
+  explosions = [];
+  
+  const newState = initializeCitiesAndSilos();
+  cities = newState.cities;
+  silos = newState.silos;
+  
+  document.getElementById('levelDisplay').textContent = 1;
+  document.getElementById('scoreDisplay').textContent = 0;
+  lastTime = performance.now();
+}
+
+let lastTime = performance.now();
+function loop(time) {
+  requestAnimationFrame(loop);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Spawn missiles every interval
+  if (time - lastTime > 3000 && currInterval < levelConfig.numberOfWaves) {
+    for (let i = 0; i < levelConfig.missilesPerWave; i++) {
+      spawnMissile();
+    }
+    currInterval++;
+    lastTime = time;
+  }
+
+  // Draw cities
+  context.fillStyle = 'blue';
+  cities.forEach(city => {
+    context.fillRect(city.x - cityWidth / 2, city.y, cityWidth, cityHeight);
+  });
+
+  // Draw ground and silos
+  context.fillStyle = 'yellow';
+  context.beginPath();
+  context.moveTo(0, canvas.height);
+  context.lineTo(0, groundY);
+
+  siloPos.forEach(x => {
+    context.lineTo(x - 40, groundY);
+    context.lineTo(x - 20, siloY);
+    context.lineTo(x + 20, siloY);
+    context.lineTo(x + 40, groundY);
+  });
+
+  context.lineTo(canvas.width, groundY);
+  context.lineTo(canvas.width, canvas.height);
+  context.fill();
+
+  // Draw silo missiles
+  context.fillStyle = 'black';
+  silos.forEach(silo => {
+    let missilesPerRow = 1;
+    let count = 0;
+    let x = silo.x;
+    let y = silo.y + 5;
+
+    for (let i = 0; i < silo.missiles; i++) {
+      context.fillRect(x, y, 4, 10);
+      x += 12;
+
+      if (++count === missilesPerRow) {
+        x = silo.x - 6 * count;
+        missilesPerRow++;
+        y += 7;
+        count = 0;
+      }
+    }
+  });
+
+  // Update and draw missiles
+  context.strokeStyle = 'red';
+  context.lineWidth = 2;
+  context.fillStyle = Math.round(time / 2) % 2 === 0 ? 'black' : 'white';
+
+  missiles.forEach(missile => {
+    missile.pos.x += missile.dx;
+    missile.pos.y += missile.dy;
+
+    explosions.forEach(explosion => {
+      const dist = distance(explosion, missile.pos);
+      if (dist < missileSize + explosion.size) {
+        missile.alive = false;
+        updateScore(levelConfig.baseScore);  // Score for destroying enemy missile
+      }
+    });
+
+    const dist = distance(missile.pos, missile.target);
+    if (dist < missileSpeed) {
+      missile.alive = false;
+      missile.target.alive = false;
+    }
+
+    if (missile.alive) {
+      context.beginPath();
+      context.moveTo(missile.start.x, missile.start.y);
+      context.lineTo(missile.pos.x, missile.pos.y);
+      context.stroke();
+      context.fillRect(missile.pos.x - missileSize / 2, missile.pos.y - missileSize / 2, missileSize, missileSize);
+    }
+    else {
+      explosions.push({
+        x: missile.pos.x,
+        y: missile.pos.y,
+        size: 2,
+        dir: 1,
+        alive: true
+      });
+    }
+  });
+
+  // Update and draw counter missiles
+  context.strokeStyle = 'blue';
+  context.fillStyle = 'white';
+  counterMissiles.forEach(missile => {
+    missile.pos.x += missile.dx;
+    missile.pos.y += missile.dy;
+
+    const dist = distance(missile.pos, missile.target);
+    if (dist < counterMissileSpeed) {
+      missile.alive = false;
+      explosions.push({
+        x: missile.pos.x,
+        y: missile.pos.y,
+        size: 2,
+        dir: 1,
+        alive: true
+      });
+    }
+    else {
+      context.beginPath();
+      context.moveTo(missile.start.x, missile.start.y);
+      context.lineTo(missile.pos.x, missile.pos.y);
+      context.stroke();
+      context.fillRect(missile.pos.x - 2, missile.pos.y - 2, 4, 4);
+    }
+  });
+
+  // Update and draw explosions
+  explosions.forEach(explosion => {
+    explosion.size += 0.35 * explosion.dir;
+
+    if (explosion.size > 30) {
+      explosion.dir = -1;
+    }
+
+    if (explosion.size <= 0) {
+      explosion.alive = false;
+    }
+    else {
+      context.fillStyle = Math.round(time / 3) % 2 === 0 ? 'blue' : 'white';
+      context.beginPath();
+      context.arc(explosion.x, explosion.y, explosion.size, 0, 2 * Math.PI);
+      context.fill();
+    }
+  });
+
+  // Clean up
+  missiles = missiles.filter(missile => missile.alive);
+  counterMissiles = counterMissiles.filter(missile => missile.alive);
+  explosions = explosions.filter(explosion => explosion.alive);
+  cities = cities.filter(city => city.alive);
+  silos = silos.filter(silo => silo.alive);
+
+  // Check if level is complete
+  checkLevelComplete();
+
+  // Check for game over
+  if (cities.length === 0) {
+    alert(`Game Over!\nFinal Score: ${score}\nReached Level: ${currLevel + 1}`);
+    resetGame();
+  }
+}
+
+canvas.addEventListener('click', e => {
+  const x = e.clientX - e.target.offsetLeft;
+  const y = e.clientY - e.target.offsetTop;
+
+  let launchSilo = null;
+  let siloDistance = Infinity;
+  silos.forEach(silo => {
+    const dist = distance({ x, y }, silo);
+    if (dist < siloDistance && silo.missiles) {
+      siloDistance = dist;
+      launchSilo = silo;
+    }
+  });
+
+  if (launchSilo) {
+    const start = { x: launchSilo.x, y: launchSilo.y };
+    const target = { x, y };
+    const angle = angleBetweenPoints(start, target);
+    launchSilo.missiles--;
+    counterMissiles.push({
+      start,
+      target,
+      pos: { x: launchSilo.x, y: launchSilo.y },
+      dx: counterMissileSpeed * Math.sin(angle),
+      dy: counterMissileSpeed * -Math.cos(angle),
+      alive: true
+    });
+  }
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

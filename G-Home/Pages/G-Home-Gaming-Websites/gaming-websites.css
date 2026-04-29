@@ -1,0 +1,160 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    overflow-x: hidden; /* Disable horizontal scrolling */
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh; /* Ensures the body takes up full height */
+    display: block; /* Removed flex from the body */
+}
+
+/* Header Styles */
+header {
+    background-color: #bd0f0f;
+    color: white;
+    text-align: center;
+    padding: 20px 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+h1 {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    font-size: 2.4rem;
+}
+
+/* Image Styles */
+.logo-1,
+.logo-2 {
+    display: block;
+    margin: 30px auto;
+    max-width: 900px;
+    width: 100%;
+    height: auto;
+}
+
+/* Main Content */
+h2 {
+    font-size: 2rem;
+    margin: 15px 0;
+    color: #333;
+    text-align: center;
+}
+
+p {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    line-height: 1.8;
+    text-align: center;
+    word-wrap: break-word; /* Ensure text wraps */
+    word-break: break-word; /* Ensures breaking of words if needed */
+    overflow-wrap: break-word; /* Another way to ensure wrapping */
+}
+
+/* Section Styles */
+section {
+    margin: 15px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word; /* Ensure all content breaks when needed */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers content inside the section */
+    justify-content: center; /* Centers content inside the section */
+}
+
+/* Footer Styles */
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #333;
+    color: white;
+    position: relative;
+    width: 100%;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+}
+
+footer p {
+    margin: 0;
+    font-size: 1em;
+}
+
+/* Link Styles */
+a {
+    color: #0066cc;
+    text-decoration: none;
+    word-wrap: break-word; /* Ensure links wrap properly */
+    word-break: break-word; /* Ensure links break and don't overflow */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    /* Navbar adjustments */
+    .navbar {
+        flex-direction: column;
+        align-items: center;  /* Center navbar items on small screens */
+        justify-content: center;
+        width: 100%;
+    }
+
+    .menu {
+        flex-direction: column;
+        align-items: center;  /* Center menu items */
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .cta-button {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.2rem;
+    }
+
+    header h1 {
+        font-size: 2.2rem;
+    }
+
+    h2 {
+        font-size: 1.8rem;
+    }
+
+    /* Ensure images scale down */
+    .logo-1, .logo-2 {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .cta-button {
+        padding: 12px 15px;
+        font-size: 16px;
+    }
+
+    .menu-link {
+        font-size: 16px;
+    }
+
+    /* Ensure images scale properly */
+    .logo-1, .logo-2 {
+        width: 100%;
+        max-width: 100%; /* Ensure they fit even smaller screens */
+        height: auto;
+    }
+}

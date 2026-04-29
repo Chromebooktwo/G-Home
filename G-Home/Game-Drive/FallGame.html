@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Previous head and style sections remain the same -->
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FallGame</title>
+
+    <style>
+        /* Previous styles remain the same */
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            background-color: blueviolet;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 50px;
+        }
+
+        hr {
+            text-align: center;
+            margin: 50px;
+        }
+
+        #score-container {
+            width: 400px;
+            margin: 20px auto;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+        }
+
+        #game {
+            width: 400px;
+            height: 500px;
+            border: 5px solid red;
+            border-radius: 15px;
+            margin: 20px auto;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #character {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            position: relative;
+            top: 400px;
+            left: 190px;
+            z-index: 1000000;
+        }
+
+        .block {
+            width: 400px;
+            height: 20px;
+            background-color: black;
+            position: relative;
+            top: 100px;
+            margin-top: -20px;
+        }
+
+        .hole {
+            width: 40px;
+            height: 20px;
+            background-color: blueviolet;
+            position: relative;
+            top: 100px;
+            margin-top: -20px;
+        }
+
+        #pause-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 24px;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000001;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Fall Game</h1>
+    <hr>
+    <div id="score-container">
+        <div>Score: <span id="current-score">0</span></div>
+        <div>High Score: <span id="high-score">0</span></div>
+    </div>
+    <div id="game">
+        <div id="pause-overlay">PAUSED</div>
+        <div id="character"></div>
+    </div>
+
+    <script>
+        // Previous game variables remain the same
+        var character = document.getElementById('character');
+        var game = document.getElementById('game');
+        var pauseOverlay = document.getElementById('pause-overlay');
+        var currentScoreElement = document.getElementById('current-score');
+        var highScoreElement = document.getElementById('high-score');
+        var interval;
+        var both = 0;
+        var counter = 0;
+        var currentBlocks = [];
+        var currentScore = 0;
+        var highScore = parseInt(localStorage.getItem('highScore')) || 0;
+        var passedBlocks = new Set();
+        var blockInterval;
+        var isPaused = false;
+
+        // Initialize high score display
+        highScoreElement.textContent = highScore;
+
+        // Function to display developer commands
+        function showDevCommands() {
+            console.log('%cDeveloper Commands:', 'font-size: 14px; font-weight: bold; color: #ff5722;');
+            console.log('%c╔════════════════════════════════════════════════════════════════════════════╗', 'color: #2196f3');
+            
+            const commands = [
+                {cmd: 'gamedev.setHighScore(100)', desc: 'Set high score to 100'},
+                {cmd: 'gamedev.getHighScore()', desc: 'Get current high score'},
+                {cmd: 'gamedev.resetHighScore()', desc: 'Reset high score to 0'},
+                {cmd: 'gamedev.togglePause()', desc: 'Toggle pause on/off'},
+                {cmd: 'gamedev.pauseGame()', desc: 'Pause the game'},
+                {cmd: 'gamedev.resumeGame()', desc: 'Resume the game'},
+                {cmd: 'gamedev.isPaused()', desc: 'Check if game is paused'},
+                {cmd: 'gamedev.showCommands()', desc: 'Show this command list again'}
+            ];
+
+            commands.forEach(({cmd, desc}) => {
+                console.log(
+                    `%c║ %c${cmd.padEnd(30)} %c// ${desc.padEnd(40)}%c║`,
+                    'color: #2196f3',
+                    'color: #4caf50; font-family: monospace;',
+                    'color: #9e9e9e;',
+                    'color: #2196f3'
+                );
+            });
+            
+            console.log('%c╚════════════════════════════════════════════════════════════════════════════╝', 'color: #2196f3');
+        }
+
+        // Developer tools interface
+        window.gamedev = {
+            setHighScore: function(score) {
+                highScore = parseInt(score);
+                localStorage.setItem('highScore', highScore);
+                highScoreElement.textContent = highScore;
+                console.log(`High score set to: ${highScore}`);
+            },
+            
+            getHighScore: function() {
+                return parseInt(localStorage.getItem('highScore')) || 0;
+            },
+            
+            resetHighScore: function() {
+                this.setHighScore(0);
+                console.log('High score reset to 0');
+            },
+
+            togglePause: function() {
+                if (isPaused) {
+                    this.resumeGame();
+                } else {
+                    this.pauseGame();
+                }
+            },
+
+            pauseGame: function() {
+                if (!isPaused) {
+                    clearInterval(blockInterval);
+                    pauseOverlay.style.display = 'flex';
+                    isPaused = true;
+                    console.log('Game paused');
+                }
+            },
+
+            resumeGame: function() {
+                if (isPaused) {
+                    blockInterval = setInterval(gameLoop, 1);
+                    pauseOverlay.style.display = 'none';
+                    isPaused = false;
+                    console.log('Game resumed');
+                }
+            },
+
+            isPaused: function() {
+                return isPaused;
+            },
+
+            showCommands: function() {
+                showDevCommands();
+            }
+        };
+
+        // Rest of the game code remains the same
+        function updateScore() {
+            currentScoreElement.textContent = currentScore;
+            
+            if (currentScore > highScore) {
+                highScore = currentScore;
+                highScoreElement.textContent = highScore;
+                localStorage.setItem('highScore', highScore);
+            }
+        }
+
+        function moveLeft() {
+            var left = parseInt(window.getComputedStyle(character).getPropertyValue("left"));
+            if (left > 0) {
+                character.style.left = left - 2 + "px";
+            }
+        }
+
+        function moveRight() {
+            var left = parseInt(window.getComputedStyle(character).getPropertyValue("left"));
+            if (left < 380) {
+                character.style.left = left + 2 + "px";
+            }
+        }
+
+        document.addEventListener("keydown", event => {
+            if (isPaused) return;
+            if (both == 0) {
+                both++;
+                if (event.key === "ArrowLeft") {
+                    interval = setInterval(moveLeft, 1);
+                }
+                if (event.key === "ArrowRight") {
+                    interval = setInterval(moveRight, 1);
+                }
+            }
+        });
+
+        document.addEventListener("keyup", event => {
+            clearInterval(interval);
+            both = 0;
+        });
+
+        function gameLoop() {
+            // Previous gameLoop code remains the same
+            var blockLast = document.getElementById("block" + (counter - 1));
+            var holeLast = document.getElementById("hole" + (counter - 1));
+
+            if (counter > 0) {
+                var blockLastTop = parseInt(window.getComputedStyle(blockLast).getPropertyValue("top"));
+                var holeLastTop = parseInt(window.getComputedStyle(holeLast).getPropertyValue("top"));
+            }
+
+            if (blockLastTop < 400 || counter == 0) {
+                var block = document.createElement("div");
+                var hole = document.createElement("div");
+                block.setAttribute("class", "block");
+                hole.setAttribute("class", "hole");
+                block.setAttribute("id", "block" + counter);
+                hole.setAttribute("id", "hole" + counter);
+
+                block.style.top = blockLastTop + 100 + "px";
+                hole.style.top = holeLastTop + 100 + "px";
+
+                var random = Math.floor(Math.random() * 360);
+                hole.style.left = random + "px";
+
+                game.appendChild(block);
+                game.appendChild(hole);
+                currentBlocks.push(counter);
+                counter++;
+            }
+
+            var characterTop = parseInt(window.getComputedStyle(character).getPropertyValue("top"));
+            var characterLeft = parseInt(window.getComputedStyle(character).getPropertyValue("left"));
+            var drop = 0;
+
+            if (characterTop <= 0) {
+                alert('Game Over. Score: ' + currentScore + '\nHigh Score: ' + highScore);
+                clearInterval(blockInterval);
+                location.reload();
+            }
+
+            for (var i = 0; i < currentBlocks.length; i++) {
+                let current = currentBlocks[i];
+                let iBlock = document.getElementById("block" + current);
+                let iHole = document.getElementById("hole" + current);
+
+                let iblockTop = parseFloat(window.getComputedStyle(iBlock).getPropertyValue("top"));
+                let iholeLeft = parseFloat(window.getComputedStyle(iHole).getPropertyValue("left"));
+
+                iBlock.style.top = iblockTop - 0.5 + "px";
+                iHole.style.top = iblockTop - 0.5 + "px";
+
+                if (iblockTop < -20) {
+                    currentBlocks.shift();
+                    iBlock.remove();
+                    iHole.remove();
+                }
+
+                if (iblockTop - 20 < characterTop && iblockTop > characterTop) {
+                    drop++;
+                    if (iholeLeft <= characterLeft && iholeLeft + 20 >= characterLeft) {
+                        drop = 0;
+                        if (!passedBlocks.has(current)) {
+                            currentScore++;
+                            passedBlocks.add(current);
+                            updateScore();
+                        }
+                    }
+                }
+            }
+            if (drop == 0) {
+                if (characterTop < 480) {
+                    character.style.top = characterTop + 2 + "px";
+                }
+            }
+            else {
+                character.style.top = characterTop - 0.5 + "px";
+            }
+        }
+
+        // Start the game and show commands
+        blockInterval = setInterval(gameLoop, 1);
+        showDevCommands(); // Show commands when game starts
+
+        // Show commands again if console is cleared
+        console.clear = (function(original) {
+            return function() {
+                original.apply(console, arguments);
+                setTimeout(showDevCommands, 100);
+            };
+        })(console.clear);
+    </script>
+</body>
+</html>

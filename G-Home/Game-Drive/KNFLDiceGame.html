@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KNFL Dice Game</title>
+    <style type="text/css">
+        body {
+            font-size: 16px;
+            font-family: "Helvetica", "Arial", sans-serif;
+            background-color: #eaeaea;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 4em;
+            font-weight: bold;
+            color: #8559a5;
+            text-shadow: 0 1px 0 #00bdaa, 0 2px 0 #00bdaa, 0 3px 0 #00bdaa, 0 4px 0 #00bdaa, 0 5px 0 #00bdaa;
+            text-align: center;
+        }
+
+        .spacer {
+            margin-bottom: 20px;
+            clear: both;
+        }
+
+        .playground:after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+
+        .dice {
+            border: 1px solid #111;
+            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            position: relative;
+            background: #fff;
+            float: left;
+            margin-right: 10px;
+        }
+
+        .dice:before {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 6px;
+            background: transparent;
+            border-radius: 100%;
+            position: absolute;
+            right: 100%;
+            bottom: 100%;
+        }
+
+        .dice.dice-1:before {
+            box-shadow: 23px 23px 0 #111;
+        }
+
+        .dice.dice-2:before {
+            box-shadow: 16px 30px 0 #111, 30px 16px 0 #111;
+        }
+
+        .dice.dice-3:before {
+            box-shadow: 16px 30px 0 #111, 23px 23px 0 #111, 30px 16px 0 #111;
+        }
+
+        .dice.dice-4:before {
+            box-shadow: 16px 16px 0 #111, 16px 30px 0 #111, 30px 16px 0 #111, 30px 30px 0 #111;
+        }
+
+        .dice.dice-5:before {
+            box-shadow: 16px 16px 0 #111, 23px 23px 0 #111, 16px 30px 0 #111, 30px 16px 0 #111, 30px 30px 0 #111;
+        }
+
+        .dice.dice-6:before {
+            box-shadow: 16px 16px 0 #111, 16px 23px 0 #111, 16px 30px 0 #111, 30px 16px 0 #111, 30px 23px 0 #111, 30px 30px 0 #111;
+        }
+
+        .rollaction {
+            font-size: 1em;
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            background-color: #a1dd70;
+            color: rgba(0, 0, 0, 0.6);
+            font-weight: bold;
+            padding: 6px 8px;
+            outline: 0;
+            min-width: 120px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .rollaction:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .rollaction:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) inset;
+        }
+
+        .instructions {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .scoreboard {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .win-message {
+            font-size: 1.5em;
+            color: #ff5722;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="logo">KNFL Dice Game</div>
+
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <p>Click the "Roll" button to roll 5 dice. The goal is to roll specific combinations:</p>
+            <ul>
+                <li><strong>KNFL:</strong> 5 consecutive numbers (e.g., 1, 2, 3, 4, 5) - <strong>500 points</strong></li>
+                <li><strong>Lil' Street:</strong> 4 consecutive numbers (e.g., 1, 2, 3, 4) - <strong>30 points</strong></li>
+                <li><strong>Big Street:</strong> 5 consecutive numbers (e.g., 1, 2, 3, 4, 5) - <strong>40 points</strong></li>
+                <li><strong>Fullhouse:</strong> A pair and a three-of-a-kind (e.g., 3, 3, 3, 2, 2) - <strong>25 points</strong></li>
+                <li><strong>Stack:</strong> The highest frequency of a number (e.g., three 5s) - points are based on frequency.</li>
+            </ul>
+        </div>
+
+        <div class="playground">
+            <!-- Dice will appear here after rolling -->
+        </div>
+
+        <button class="rollaction" type="button">Roll</button>
+
+        <div class="win-message" style="display: none;"></div>
+
+        <div class="scoreboard"></div>
+
+    </div>
+
+    <script>
+        let totalPlays = 0, totalHighWins = 0, highWinPercent = 0, totalPoints = 0;
+
+        let playgroundElement = document.querySelector('.playground');
+        let rollActionElement = document.querySelector('.rollaction');
+        let winMessageElement = document.querySelector('.win-message');
+        let scoreboardElement = document.querySelector('.scoreboard');
+
+        rollActionElement.onclick = function () {
+            let totalDiceNumbers = [];
+            totalPlays++;
+
+            playgroundElement.innerHTML = '';
+            winMessageElement.style.display = 'none';
+
+            for (let i = 1; i <= 5; i++) {
+                let diceNumber = (Math.floor(Math.random() * 6) + 1);
+                let diceElement = document.createElement('div');
+                diceElement.classList.add('dice');
+                diceElement.classList.add('dice-' + diceNumber);
+
+                totalDiceNumbers.push(diceNumber);
+                playgroundElement.appendChild(diceElement);
+            }
+
+            totalDiceNumbers.sort();
+
+            let _preDiceNumber = null;
+            let fullhouseCount = 0;
+            let streetDiceCount = 1;
+            let isLilStreet = false;
+            let isBigStreet = false;
+            let isKNFL = true;
+
+            let dicePoints = {
+                1: 0,
+                2: 0,
+                3: 0,
+                4: 0,
+                5: 0,
+                6: 0
+            };
+
+            let currentDiceCount = 0;
+
+            totalDiceNumbers.forEach(function (currentDiceNumber) {
+                currentDiceCount++;
+                dicePoints[currentDiceNumber]++;
+
+                if (_preDiceNumber !== null) {
+                    if (_preDiceNumber !== currentDiceNumber) {
+                        isKNFL = false;
+
+                        if ((currentDiceNumber - 1) !== _preDiceNumber) {
+                            streetDiceCount = 1;
+                        } else {
+                            streetDiceCount++;
+
+                            if (streetDiceCount === 4) {
+                                isLilStreet = true;
+                            } else if (streetDiceCount > 4) {
+                                isBigStreet = true;
+                            }
+                        }
+                    }
+                }
+
+                _preDiceNumber = currentDiceNumber;
+            });
+
+            let diceNumberTarget = null;
+            let diceNumberPoints = 0;
+
+            for (let n in dicePoints) {
+                if (dicePoints[n] >= 2) {
+                    fullhouseCount += dicePoints[n];
+                }
+
+                if ((n * dicePoints[n]) > diceNumberPoints) {
+                    diceNumberTarget = n;
+                    diceNumberPoints = (n * dicePoints[n]);
+                }
+            }
+
+            let winText = '-';
+            let winPoints = 0;
+
+            if (isKNFL) {
+                winText = 'KNFL';
+                winPoints = 500;
+                totalHighWins++;
+            } else if (isLilStreet || isBigStreet) {
+                winText = (isBigStreet ? 'Big street' : 'Lil\' street');
+                winPoints = (isBigStreet ? 40 : 30);
+            } else if (fullhouseCount === 5) {
+                winText = 'Fullhouse';
+                winPoints = 25;
+            } else {
+                winText = 'Stack (' + dicePoints[diceNumberTarget] + ') of ' + diceNumberTarget;
+                winPoints = diceNumberPoints;
+            }
+
+            totalPoints += winPoints;
+            highWinPercent = Math.ceil((100 / totalPlays * totalHighWins)) + '%';
+
+            winMessageElement.style.display = 'block';
+            winMessageElement.textContent = 'You rolled: ' + winText + ' (' + winPoints + ' points)!';
+
+            scoreboardElement.innerHTML = 'Total Points: ' + totalPoints + ' | Plays: ' + totalPlays + ' | KNFL Win Rate: ' + highWinPercent;
+        };
+    </script>
+
+</body>
+</html>
