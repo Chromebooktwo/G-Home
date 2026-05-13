@@ -68,37 +68,25 @@ counter.style.margin = "10px 0";
 counter.style.fontWeight = "600";
 
 searchSection.appendChild(counter);
-
 const totalLinks = sections.length;
-
 function updateCounter(visible) {
     counter.textContent = `${visible} / ${totalLinks}`;
 }
-
 updateCounter(totalLinks);
-
 searchBar.addEventListener("keyup", searchLinks);
-
 function searchLinks() {
-
     let filter = normalizeText(searchBar.value.trim());
-
     let visibleCount = 0;
-
     sections.forEach(section => {
-
         let paragraph = section.querySelector("p");
         if (!paragraph) return;
-
         let rawText = paragraph.childNodes[0]?.textContent || "";
         let text = normalizeText(rawText);
-
         if (filter === "") {
             section.style.display = "flex";
             visibleCount++;
             return;
         }
-
         if (text.includes(filter)) {
             section.style.display = "flex";
             visibleCount++;
@@ -106,23 +94,15 @@ function searchLinks() {
             section.style.display = "none";
         }
     });
-
     noResults.style.display = visibleCount === 0 ? "flex" : "none";
-
     updateCounter(visibleCount);
 }
-
 clearButton.addEventListener("click", () => {
-
     searchBar.value = "";
-
     sections.forEach(section => {
         section.style.display = "flex";
     });
-
     noResults.style.display = "none";
-
     updateCounter(totalLinks);
-
     searchBar.focus();
 });
