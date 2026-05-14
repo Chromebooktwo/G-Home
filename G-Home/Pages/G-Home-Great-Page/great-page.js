@@ -48,7 +48,7 @@ const noResults = document.createElement("section");
 noResults.id = "noResults";
 
 noResults.innerHTML = `
-    <h2>No links found</h2>
+    <h2>No Links Found</h2>
     <p>Try searching something else.</p>
 `;
 
