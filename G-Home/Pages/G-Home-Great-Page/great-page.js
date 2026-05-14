@@ -43,81 +43,51 @@ const sections = Array.from(
     section.querySelector("a") &&
     !section.classList.contains("search-section")
 );
-
 const noResults = document.createElement("section");
-
 noResults.id = "noResults";
-
 noResults.innerHTML = `
     <h2>No Links Found</h2>
     <p>Try searching something else.</p>
 `;
-
 noResults.style.display = "none";
-
 searchSection.insertAdjacentElement("afterend", noResults);
-
 function normalizeText(str) {
     return (str || "")
         .toLowerCase()
         .replace(/[\s-]/g, "");
 }
-
 const totalLinks = sections.length;
-
 function updateCounter(visible) {
-    counter.textContent = `${visible} / ${totalLinks}`;
+    if (counter) {
+        counter.textContent = `${visible} / ${totalLinks}`;
+    }
 }
-
 updateCounter(totalLinks);
-
 searchBar.addEventListener("keyup", searchLinks);
-
 function searchLinks() {
-
-    let filter = normalizeText(searchBar.value.trim());
-
+    const filter = normalizeText(searchBar.value.trim());
     let visibleCount = 0;
-
     sections.forEach(section => {
-
-        let paragraph = section.querySelector("p");
-
+        const paragraph = section.querySelector("p");
         if (!paragraph) return;
-
-        let rawText = paragraph.childNodes[0]?.textContent || "";
-        let text = normalizeText(rawText);
-
-        if (filter === "") {
-            section.style.display = "flex";
-            visibleCount++;
-            return;
-        }
-
-        if (text.includes(filter)) {
+        const rawText = paragraph.childNodes[0]?.textContent || "";
+        const text = normalizeText(rawText);
+        if (filter === "" || text.includes(filter)) {
             section.style.display = "flex";
             visibleCount++;
         } else {
             section.style.display = "none";
         }
     });
-
     noResults.style.display = visibleCount === 0 ? "flex" : "none";
-
     updateCounter(visibleCount);
 }
-
 clearButton.addEventListener("click", () => {
-
     searchBar.value = "";
-
     sections.forEach(section => {
         section.style.display = "flex";
     });
-
     noResults.style.display = "none";
-
     updateCounter(totalLinks);
-
     searchBar.focus();
 });
