@@ -5,8 +5,9 @@
     box-sizing: border-box;
 }
 
-html, body {
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+html,
+body {
+    overflow-x: hidden;
 }
 
 body {
@@ -14,9 +15,9 @@ body {
     background-color: #f0f4f8;
     color: #333;
     line-height: 1.6;
-    min-height: 100vh; /* Ensures the body takes up full height */
-    display: block; /* Removed flex from body to avoid global centering */
-    text-align: center; /* Ensures text is centered by default */
+    min-height: 100vh;
+    display: block;
+    text-align: center;
 }
 
 /* Header Styles */
@@ -26,12 +27,12 @@ header {
     padding: 20px 15px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     width: 100%;
-    text-align: center; /* Ensures header text is centered */
+    text-align: center;
 }
 
 h1 {
     margin: 0;
-    font-family: 'Arial', sans-serif;
+    font-family: Arial, sans-serif;
     font-size: 2.4rem;
 }
 
@@ -39,7 +40,7 @@ h1 {
 .logo-1,
 .logo-2 {
     display: block;
-    margin: 30px auto; /* Centers the images horizontally */
+    margin: 30px auto;
     max-width: 900px;
     width: 100%;
     height: auto;
@@ -58,21 +59,30 @@ p {
     line-height: 1.8;
 }
 
-/* Section Styles */
+/* Base Section Styles */
 section {
-    margin: 15px auto;
     padding: 20px;
     background-color: white;
     border-radius: 12px;
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
     max-width: 900px;
-    width: 100%; /* Ensures section is responsive */
+    width: 100%;
     word-wrap: break-word;
     overflow-wrap: break-word;
     word-break: break-word;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centers the content within the section */
+    align-items: center;
+}
+
+/* Normal Sections */
+section:not(.search-section) {
+    margin: 15px auto;
+}
+
+/* Larger spacing around image sections */
+.image-section {
+    margin: 35px auto;
 }
 
 /* Footer Styles */
@@ -101,12 +111,15 @@ a {
 .search-section {
     width: 100%;
     max-width: 900px;
-    margin: 25px auto;
+
+    /* Smaller spacing than normal sections */
+    margin: 10px auto;
+
     padding: 20px;
 
     background: white;
     border-radius: 14px;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 
     display: flex;
     flex-direction: row;
@@ -122,7 +135,7 @@ a {
     padding: 16px 20px;
     font-size: 18px;
 
-    border: 2px solid #E02735; /* red outline restored */
+    border: 2px solid #E02735;
     border-radius: 12px;
 
     background: #f3f5f7;
@@ -138,7 +151,7 @@ a {
     box-shadow: 0 0 0 4px rgba(224, 39, 53, 0.2);
 }
 
-/* Button */
+/* Clear Button */
 #clearSearch {
     padding: 16px 24px;
 
@@ -166,6 +179,13 @@ a {
     transform: scale(0.98);
 }
 
+/* Counter */
+#linkCounter {
+    margin: 10px 0;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 /* Mobile */
 @media (max-width: 600px) {
     .search-section {
@@ -177,21 +197,24 @@ a {
     #clearSearch {
         width: 100%;
     }
+
+    #linkCounter {
+        text-align: center;
+    }
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    /* Navbar adjustments */
     .navbar {
         flex-direction: column;
-        align-items: center; /* Centers the navbar on smaller screens */
+        align-items: center;
         justify-content: center;
         width: 100%;
     }
 
     .menu {
         flex-direction: column;
-        align-items: center; /* Centers the menu on smaller screens */
+        align-items: center;
         gap: 10px;
         justify-content: center;
     }
@@ -202,37 +225,33 @@ a {
         font-size: 1.2rem;
     }
 
-    /* Header font size adjustment */
     header h1 {
         font-size: 2.2rem;
     }
 
-    /* Main content adjustments */
     h2 {
         font-size: 1.8rem;
     }
 
-    /* Ensure images are responsive */
-    .logo-1, .logo-2 {
+    .logo-1,
+    .logo-2 {
         max-width: 100%;
         width: 100%;
     }
 }
 
 @media (max-width: 480px) {
-    /* Call-to-action button size */
     .cta-button {
         padding: 12px 15px;
         font-size: 16px;
     }
 
-    /* Menu link font size */
     .menu-link {
         font-size: 16px;
     }
 
-    /* Ensure images scale properly */
-    .logo-1, .logo-2 {
+    .logo-1,
+    .logo-2 {
         width: 100%;
         max-width: 100%;
         height: auto;
