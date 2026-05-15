@@ -131,6 +131,7 @@ a {
 /* Search Bar */
 #searchBar {
     flex: 1;
+    min-width: 0;
 
     padding: 16px 20px;
     font-size: 18px;
@@ -183,9 +184,14 @@ a {
     margin: 10px 0;
     font-weight: 600;
     white-space: nowrap;
+
+    /* Stable but tighter */
+    width: 9ch;
+
+    text-align: center;
+    flex-shrink: 0;
 }
 
-/* Mobile */
 @media (max-width: 600px) {
     .search-section {
         flex-direction: column;
@@ -199,6 +205,7 @@ a {
 
     #linkCounter {
         text-align: center;
+        margin: 10px auto 0 auto; /* centers it */
     }
 }
 
