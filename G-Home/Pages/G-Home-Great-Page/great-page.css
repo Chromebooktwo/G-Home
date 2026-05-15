@@ -172,7 +172,6 @@ a {
 
 #clearSearch:hover {
     background: #BD0F0F;
-    transform: translateY(-1px);
 }
 
 #clearSearch:active {
